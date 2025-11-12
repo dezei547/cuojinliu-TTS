@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错金流 | 声纹铸刻</title>
+    <!-- 引入外部资源 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- 配置Tailwind自定义颜色 - 错金银色调 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'gold': '#D4AF37',      // 金色
+                        'gold-light': '#F8EFD4', // 浅金
+                        'silver': '#C0C0C0',    // 银色
+                        'silver-light': '#E8E8E8', // 浅银
+                        'ink': '#232323',       // 墨黑（深邃底色）
+                        'ink-light': '#3A3A3A', // 浅墨
+                        'bronze': '#8D6E63',    // 青铜色
+                        'bronze-dark': '#5D4037', // 深青铜
+                    },
+                    fontFamily: {
+                        'song': ['"Noto Serif SC"', 'serif'],
+                        'sans': ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'golden': '0 2px 15px rgba(212, 175, 55, 0.15)',
+                        'deep': 'inset 0 0 15px rgba(0, 0, 0, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 - 错金银效果 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .gold-gradient {
+                background: linear-gradient(135deg, #D4AF37 0%, #F8EFD4 50%, #D4AF37 100%);
+            }
+            .silver-gradient {
+                background: linear-gradient(135deg, #C0C0C0 0%, #E8E8E8 50%, #C0C0C0 100%);
+            }
+            .ink-gradient {
+                background: linear-gradient(135deg, #232323 0%, #3A3A3A 100%);
+            }
+            .gold-border {
+                border-image: linear-gradient(to right, #D4AF37, #F8EFD4) 1;
+            }
+            .engraved {
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+            }
+            .relief {
+                text-shadow: 0 -1px 1px rgba(255, 255, 255, 0.1);
+            }
+            .bg-pattern {
+                background-image: 
+                    radial-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+                    radial-gradient(rgba(192, 192, 192, 0.02) 1px, transparent 1px);
+                background-size: 50px 50px;
+                background-position: 0 0, 25px 25px;
+            }
+        }
+    </style>
+    
+    <style>
+        /* 导入字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap');
+        
+        /* 全局样式 - 错金银质感 */
+        body {
+            -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth;
+            background-color: #232323;
+        }
+        
+        /* 错金银线条纹理 */
+        .gold-inlay {
+            position: relative;
+        }
+        
+        .gold-inlay::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px),
+                linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        
+        /* 自定义滚动条 - 金属质感 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #3A3A3A;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #D4AF37, #C0C0C0);
+            border-radius: 3px;
+        }
+        
+        /* 进度条动画 - 金属流动感 */
+        @keyframes goldFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .gold-flow {
+            background: linear-gradient(90deg, #D4AF37, #F8EFD4, #D4AF37);
+            background-size: 200% 100%;
+            animation: goldFlow 3s ease infinite;
+        }
+        
+        /* 按钮悬停效果 - 金属光泽 */
+        .metal-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metal-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: all 0.6s ease;
+        }
+        
+        .metal-btn:hover::before {
+            left: 100%;
+        }
+        
+        /* 青铜器纹饰背景 */
+        .bronze-pattern {
+            background-image: 
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D4AF37' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        /* 音频上传区域样式 */
+        .audio-upload {
+            transition: all 0.3s ease;
+        }
+        
+        .audio-upload.drag-over {
+            border-color: #D4AF37;
+            background-color: rgba(212, 175, 55, 0.1);
+            transform: scale(1.01);
+        }
+        
+        /* 音频波形可视化 */
+        .audio-wave {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 0 5px;
+        }
+        
+        .audio-wave-bar {
+            width: 2px;
+            background: linear-gradient(to top, #D4AF37, #F8EFD4);
+            border-radius: 1px;
+            animation: wave 1s infinite ease-in-out;
+        }
+        
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1); }
+        }
+    </style>
+</head>
+<body class="font-sans text-silver-light min-h-screen bg-pattern scroll-pattern">
+    <!-- 顶部导航 - 仿金属边框设计 -->
+    <header class="bg-ink/80 backdrop-blur-md border-b border-gold/20 sticky top-0 z-50">
+        <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-lg ink-gradient border border-gold/30 flex items-center justify-center gold-inlay">
+                    <i class="fa fa-magic text-gold"></i>
+                </div>
+                <h1 class="text-lg font-song font-semibold text-gold-light engraved">错金流</h1>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button class="p-2 rounded-full hover:bg-ink-light/50 transition-all duration-300 border border-silver/10 hover:border-gold/30">
+                    <i class="fa fa-question-circle text-silver"></i>
+                </button>
+                <button class="p-2 rounded-full hover:bg-ink-light/50 transition-all duration-300 border border-silver/10 hover:border-gold/30">
+                    <i class="fa fa-cog text-silver"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- 页面标题 - 错金铭文风格 -->
+        <div class="text-center mb-12 relative">
+            <h1 class="text-[clamp(1.8rem,5vw,2.8rem)] font-song font-bold text-gold-light mb-3 engraved relative">声纹铸刻</h1>
+            <p class="text-silver max-w-lg mx-auto relative">取声之质，融金之美，铸刻于音</p>
+            <!-- 装饰线条 -->
+            <div class="flex justify-center mt-4 space-x-2">
+                <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+            </div>
+        </div>
+
+        <!-- 主要内容区 -->
+        <main class="space-y-8">
+            <!-- 音频生成面板 - 仿青铜器质感 -->
+            <section class="bg-ink-light rounded-xl border border-gold/10 shadow-deep p-6 md:p-8 transition-all duration-500 hover:border-gold/30 relative overflow-hidden bronze-pattern">
+                <!-- 背景纹饰 -->
+                <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+                    <div class="w-full h-full bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23d4af37\" fill-opacity=\"1\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+                </div>
+                
+                <!-- 主要输入区域 -->
+                <div class="relative">                 
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- 音色参考音频 - 仿金属容器 -->
+                        <div class="space-y-3">
+                            <label class="block text-gold font-medium relief flex items-center justify-center">
+                                <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs">壹</div>
+                                音色之范
+                            </label>
+                            
+                            <!-- 上传区域 -->
+                            <div class="audio-upload border-2 border-dashed border-gold/30 rounded-xl p-4 hover:border-gold/60 transition-all duration-300 bg-ink/50 gold-inlay min-h-[220px]" id="prompt_audio_container">
+                                <!-- 未上传状态 -->
+                                <div id="prompt_audio_upload_state" class="text-center">
+                                    <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center rounded-full bg-ink-light/50">
+                                        <i class="fa fa-volume-up text-2xl text-gold/70"></i>
+                                    </div>
+                                    <p class="text-sm text-silver mb-2">拖放音频文件于此，或</p>
+                                    <label class="metal-btn inline-block px-4 py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors cursor-pointer">
+                                        <i class="fa fa-upload mr-1"></i>选择文件
+                                        <input type="file" id="prompt_audio" accept="audio/*" class="hidden" />
+                                    </label>
+                                    <p class="text-xs text-silver/70 mt-2">可纳 MP3, WAV, AAC 诸般</p>
+                                </div>
+                                
+                                <!-- 上传后状态 (默认隐藏) -->
+                                <div id="prompt_audio_preview_state" class="hidden space-y-3">
+                                    <!-- 音频信息 -->
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fa fa-file-audio-o text-gold mr-2"></i>
+                                            <span id="prompt_audio_name" class="text-sm truncate max-w-[180px]"></span>
+                                        </div>
+                                        <button id="prompt_audio_remove" class="text-silver/60 hover:text-gold transition-colors">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- 波形可视化 -->
+                                    <div class="audio-wave" id="prompt_audio_wave">
+                                        <!-- 动态生成的波形条 -->
+                                    </div>
+                                    
+                                    <!-- 音频控制器 -->
+                                    <audio id="prompt_audio_player" controls class="w-full accent-gold"></audio>
+                                    
+                                    <!-- 音频时长 -->
+                                    <div class="flex justify-between text-xs text-silver/60">
+                                        <span id="prompt_audio_duration"></span>
+                                        <span id="prompt_audio_size"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label class="block text-gold font-medium relief text-sm mb-2">
+                                    <i class="fa fa-music mr-1"></i>预设音色
+                                </label>
+                                <select id="preset_voices" class="w-full bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none text-sm">
+                                    <option value="">-- 选择预设音色 --</option>
+                                    <!-- 动态加载的音色选项将在这里显示 -->
+                                </select>
+                            </div>                            
+                            <input type="hidden" id="prompt_audio_example" value="" />
+                        </div>
+                        
+                        <!-- 文本输入和生成按钮 -->
+                        <div class="space-y-3">
+                            <label class="block text-gold font-medium relief flex items-center justify-center">
+                                <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs ">贰</div>
+                                铭文之辞
+                            </label>
+                            <textarea 
+                                id="input_text" 
+                                placeholder="请铸刻目标铭文" 
+                                class="w-full h-32 p-3 bg-ink border border-gold/30 rounded-lg focus:border-gold focus:outline-none transition-colors resize-none text-silver placeholder-silver/50 min-h-[220px]"
+                            ></textarea>
+                            
+                            
+                            <button 
+                                id="gen_button" 
+                                class="metal-btn w-full py-3 gold-gradient text-ink font-medium rounded-lg hover:opacity-90 transition-all duration-300 shadow-golden flex items-center justify-center mt-2"
+                            >
+                                <i class="fa fa-magic mr-2"></i>铸刻声韵
+                            </button>
+                        </div>
+                        
+                        <!-- 生成结果 -->
+                        <div class="space-y-3">
+                            <label class="block text-gold font-medium relief flex items-center justify-center">
+                                <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs">叁</div>
+                                成器之音
+                            </label>
+                            <div id="output_container" class="border border-gold/30 rounded-lg p-4 min-h-[100px] flex flex-col items-center justify-center bg-ink/50 gold-inlay min-h-[220px]">
+                                <p class="text-silver/60 text-sm">铸刻之声将显于此</p>
+                                <audio id="output_audio" controls class="w-full mt-2 hidden accent-gold"></audio>
+                            </div>
+                            <div id="generation_status" class="hidden text-center py-4">
+                                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold"></div>
+                                <p class="text-sm text-silver mt-2">正在铸刻声韵...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 功能设置 -->
+                <div class="px-6 py-4 border-t border-gold/20" >
+                    <div class="flex items-center cursor-pointer" id="settings_toggle">
+                        <h3 class="text-lg font-song text-gold-light engraved">
+                            <i class="fa fa-cogs mr-2"></i>技艺调校
+                        </h3>
+                        <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="settings_chevron"></i>
+                    </div>
+                    
+                    <div id="settings_content" class="mt-4 space-y-4  hidden">
+                        <!-- 情绪控制开关 -->
+                        <div class="space-y-2">
+                            <label class="block text-gold font-medium relief">
+                                <i class="fa fa-heart mr-1"></i>情绪控制
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer" id="emo_control_switch">
+                                <div class="relative">
+                                    <!-- 开关隐藏的输入框（value=0=默认，1=调整情绪） -->
+                                    <input type="checkbox" id="emo_control_toggle" class="sr-only" value="0">
+                                    <!-- 开关样式 -->
+                                    <div class="w-14 h-7 bg-ink rounded-full border border-silver/30 transition-all hover:border-gold/30"></div>
+                                    <div class="dot absolute left-1 top-1 bg-silver/60 w-5 h-5 rounded-full transition-all hover:bg-gold/60"></div>
+                                </div>
+                                <span class="ml-3 text-sm text-silver">调整情绪</span>
+                            </label>
+                        </div>
+                        
+                        <!-- 情绪向量面板（默认隐藏） -->
+                        <div id="emotion_vector_group" class="hidden space-y-3 p-4 border border-gold/20 rounded-lg bg-ink/30 gold-inlay">
+                            <h4 class="text-gold font-medium relief">情绪维度调整</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm text-silver mb-1">喜</label>
+                                        <input type="range" id="vec1" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-silver mb-1">怒</label>
+                                        <input type="range" id="vec2" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-silver mb-1">哀</label>
+                                        <input type="range" id="vec3" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-silver mb-1">惧</label>
+                                        <input type="range" id="vec4" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm text-silver mb-1">厌恶</label>
+                                        <input type="range" id="vec5" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-silver mb-1">低落</label>
+                                        <input type="range" id="vec6" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-silver mb-1">惊喜</label>
+                                        <input type="range" id="vec7" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-silver mb-1">平静</label>
+                                        <input type="range" id="vec8" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 高级生成参数设置 -->
+                <div class="px-6 py-4 border-t border-gold/20" hidden>
+                    <div class="flex items-center cursor-pointer" id="advanced_settings_toggle">
+                        <h3 class="text-lg font-song text-gold-light engraved">
+                            <i class="fa fa-sliders mr-2"></i>精工细作
+                        </h3>
+                        <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="advanced_settings_chevron"></i>
+                    </div>
+                    
+                    <div id="advanced_settings_content" class="mt-4 hidden space-y-4">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- GPT2 采样设置 -->
+                            <div class="col-span-1 space-y-4">
+                                <h4 class="text-gold font-medium relief">GPT2 采法</h4>
+                                <p class="text-xs text-silver/60">参数影响声韵之变与铸刻之速</p>
+                                
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <label class="inline-flex items-center text-sm text-silver">
+                                            <div class="relative">
+                                                <input type="checkbox" id="do_sample" checked class="sr-only">
+                                                <div class="w-10 h-6 bg-ink rounded-full border border-gold/30"></div>
+                                                <div class="dot absolute left-1 top-1 bg-gold w-4 h-4 rounded-full transition transform translate-x-4"></div>
+                                            </div>
+                                            <span class="ml-3">do_sample</span>
+                                        </label>
+                                        <div class="flex items-center">
+                                            <label class="text-sm mr-2 text-silver">temperature</label>
+                                            <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="0.8" class="w-24 accent-gold">
+                                            <span id="temperature_value" class="text-sm ml-2 text-silver">0.8</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <label class="block text-xs text-silver/60 mb-1">top_p</label>
+                                            <input type="range" id="top_p" min="0.0" max="1.0" step="0.01" value="0.8" class="w-full accent-gold">
+                                            <span id="top_p_value" class="text-xs text-silver">0.8</span>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-silver/60 mb-1">top_k</label>
+                                            <input type="range" id="top_k" min="0" max="100" step="1" value="30" class="w-full accent-gold">
+                                            <span id="top_k_value" class="text-xs text-silver">30</span>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-silver/60 mb-1">num_beams</label>
+                                            <input type="range" id="num_beams" min="1" max="10" step="1" value="3" class="w-full accent-gold">
+                                            <span id="num_beams_value" class="text-xs text-silver">3</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs text-silver/60 mb-1">repetition_penalty</label>
+                                            <input type="number" id="repetition_penalty" value="10.0" min="0.1" max="20.0" step="0.1" 
+                                                   class="w-full text-sm p-1 bg-ink border border-gold/30 rounded text-silver accent-gold">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-silver/60 mb-1">length_penalty</label>
+                                            <input type="number" id="length_penalty" value="0.0" min="-2.0" max="2.0" step="0.1" 
+                                                   class="w-full text-sm p-1 bg-ink border border-gold/30 rounded text-silver accent-gold">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-xs text-silver/60 mb-1">max_mel_tokens</label>
+                                        <input type="range" id="max_mel_tokens" min="50" max="{{ max_mel_tokens }}" step="10" value="1500" class="w-full accent-gold">
+                                        <div class="flex justify-between text-xs text-silver/60">
+                                            <span>50</span>
+                                            <span id="max_mel_tokens_value" class="text-silver">1500</span>
+                                            <span>{{ max_mel_tokens }}</span>
+                                        </div>
+                                        <p class="text-xs text-silver/50 mt-1">铸刻Token之极数，过小则声韵截断</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 分句设置 -->
+                            <div class="col-span-1 lg:col-span-2 space-y-4">
+                                <h4 class="text-gold font-medium relief">分句之法</h4>
+                                <p class="text-xs text-silver/60">参数影响声韵之质与铸刻之速</p>
+                                
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs text-silver/60 mb-1">分句最大Token数</label>
+                                        <input type="range" id="max_text_tokens_per_segment" min="20" 
+                                               max="{{ tts.cfg.gpt.max_text_tokens if tts.cfg else 200 }}" 
+                                               step="2" value="{{ initial_segment_value }}" class="w-full accent-gold">
+                                        <div class="flex justify-between text-xs text-silver/60">
+                                            <span>20</span>
+                                            <span id="max_text_tokens_value" class="text-silver">{{ initial_segment_value }}</span>
+                                            <span>{{ tts.cfg.gpt.max_text_tokens if tts.cfg else 200 }}</span>
+                                        </div>
+                                        <p class="text-xs text-silver/50 mt-1">建议80~200之间，值大则句长，值小则句碎；过小过大皆可致声韵不精</p>
+                                    </div>
+                                    
+                                    <!-- 预览分句结果 -->
+                                    <div>
+                                        <div class="flex items-center cursor-pointer" id="segments_toggle">
+                                            <h5 class="text-gold text-sm font-medium relief">预览分句之果</h5>
+                                            <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="segments_chevron"></i>
+                                        </div>
+                                        
+                                        <div id="segments_content" class="mt-2 overflow-x-auto">
+                                            <table class="min-w-full border border-gold/20 rounded-lg bg-ink/30">
+                                                <thead>
+                                                    <tr class="bg-gold/10">
+                                                        <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">序</th>
+                                                        <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">分句之文</th>
+                                                        <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">Token数</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="segments_table_body" class="text-silver text-sm">
+                                                    <tr>
+                                                        <td colspan="3" class="py-4 px-3 text-center text-sm text-silver/60">输入铭文后显分句之果</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- 页脚 - 仿款识 -->
+        <footer class="mt-12 text-center text-silver/60 text-sm py-6 border-t border-gold/20 font-song">
+            <p>错金流 · 声纹铸刻 · 岁在癸卯 · 匠心之作</p>
+        </footer>
+    </div>
+
+    <script>
+        // 存储所有示例数据
+        let allExamples = {{ examples | tojson | safe }};
+        
+        // DOM 元素加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化音频上传功能
+            initAudioUpload('prompt');
+            loadPresetVoices();
+            // 功能设置折叠/展开
+            const settingsToggle = document.getElementById('settings_toggle');
+            const settingsContent = document.getElementById('settings_content');
+            const settingsChevron = document.getElementById('settings_chevron');
+            
+            settingsToggle.addEventListener('click', function() {
+                settingsContent.classList.toggle('hidden');
+                settingsChevron.classList.toggle('rotate-180');
+            });
+            
+            // 高级设置折叠/展开
+            const advancedToggle = document.getElementById('advanced_settings_toggle');
+            const advancedContent = document.getElementById('advanced_settings_content');
+            const advancedChevron = document.getElementById('advanced_settings_chevron');
+            
+            advancedToggle.addEventListener('click', function() {
+                advancedContent.classList.toggle('hidden');
+                advancedChevron.classList.toggle('rotate-180');
+            });
+            
+            // 分句结果折叠/展开
+            const segmentsToggle = document.getElementById('segments_toggle');
+            const segmentsContent = document.getElementById('segments_content');
+            const segmentsChevron = document.getElementById('segments_chevron');
+            
+            segmentsToggle.addEventListener('click', function() {
+                segmentsContent.classList.toggle('hidden');
+                segmentsChevron.classList.toggle('rotate-180');
+            });
+            
+            // 采样参数显示
+            const temperature = document.getElementById('temperature');
+            const temperatureValue = document.getElementById('temperature_value');
+            temperature.addEventListener('input', function() {
+                temperatureValue.textContent = this.value;
+            });
+            
+            const topP = document.getElementById('top_p');
+            const topPValue = document.getElementById('top_p_value');
+            topP.addEventListener('input', function() {
+                topPValue.textContent = this.value;
+            });
+            
+            const topK = document.getElementById('top_k');
+            const topKValue = document.getElementById('top_k_value');
+            topK.addEventListener('input', function() {
+                topKValue.textContent = this.value;
+            });
+            
+            const numBeams = document.getElementById('num_beams');
+            const numBeamsValue = document.getElementById('num_beams_value');
+            numBeams.addEventListener('input', function() {
+                numBeamsValue.textContent = this.value;
+            });
+            
+            const maxMelTokens = document.getElementById('max_mel_tokens');
+            const maxMelTokensValue = document.getElementById('max_mel_tokens_value');
+            maxMelTokens.addEventListener('input', function() {
+                maxMelTokensValue.textContent = this.value;
+            });
+            
+            const maxTextTokens = document.getElementById('max_text_tokens_per_segment');
+            const maxTextTokensValue = document.getElementById('max_text_tokens_value');
+            maxTextTokens.addEventListener('input', function() {
+                maxTextTokensValue.textContent = this.value;
+                updateSegments(); // 更新分句
+            });
+            
+            // 初始化情绪控制开关
+            const emoToggle = document.getElementById('emo_control_toggle');
+            const emoSwitch = document.getElementById('emo_control_switch');
+            const emotionVectorGroup = document.getElementById('emotion_vector_group');
+            const switchDot = emoToggle.parentElement.querySelector('.dot');
+            const switchBg = emoToggle.parentElement.querySelector('div[class*="bg-ink"]');
+
+            // 开关默认状态：未选中（银色），面板隐藏
+            emoToggle.value = 0; // 0=默认（与音色一致），1=调整情绪
+            emotionVectorGroup.classList.add('hidden');
+
+            // 开关点击事件
+            emoSwitch.addEventListener('click', function(e) {
+                // 仅点击开关区域时触发（避免点击文字误触发）
+                if (e.target.closest('.relative') || e.target === emoToggle) {
+                    emoToggle.checked = !emoToggle.checked;
+                    const isChecked = emoToggle.checked;
+
+                    // 更新开关样式
+                    if (isChecked) {
+                        // 选中：背景边框变金色，圆点变金色并右移
+                        switchBg.classList.remove('border-silver/30');
+                        switchBg.classList.add('border-gold/60');
+                        switchDot.classList.remove('bg-silver/60');
+                        switchDot.classList.add('bg-gold');
+                        switchDot.style.transform = 'translate-x-7';
+                        emoToggle.value = 1; // 标记为“调整情绪”
+                    } else {
+                        // 未选中：恢复银色，圆点复位
+                        switchBg.classList.remove('border-gold/60');
+                        switchBg.classList.add('border-silver/30');
+                        switchDot.classList.remove('bg-gold');
+                        switchDot.classList.add('bg-silver/60');
+                        switchDot.style.transform = 'translate-x-0';
+                        emoToggle.value = 0; // 标记为“默认”
+                    }
+
+                    // 显示/隐藏情绪向量面板
+                    emotionVectorGroup.classList.toggle('hidden', !isChecked);
+                }
+            });
+            
+            // 文本输入变化时更新分句
+            const inputText = document.getElementById('input_text');
+            inputText.addEventListener('input', debounce(updateSegments, 500));
+            
+            // 生成按钮点击事件
+            const genButton = document.getElementById('gen_button');
+            genButton.addEventListener('click', generateAudio);
+        });
+        
+        // 初始化音频上传功能
+        function initAudioUpload(prefix) {
+            const container = document.getElementById(`${prefix}_audio_container`);
+            const fileInput = document.getElementById(`${prefix}_audio`);
+            const uploadState = document.getElementById(`${prefix}_audio_upload_state`);
+            const previewState = document.getElementById(`${prefix}_audio_preview_state`);
+            const audioPlayer = document.getElementById(`${prefix}_audio_player`);
+            const audioName = document.getElementById(`${prefix}_audio_name`);
+            const audioDuration = document.getElementById(`${prefix}_audio_duration`);
+            const audioSize = document.getElementById(`${prefix}_audio_size`);
+            const audioWave = document.getElementById(`${prefix}_audio_wave`);
+            const removeButton = document.getElementById(`${prefix}_audio_remove`);
+            
+            // 创建波形可视化
+            // 修改initAudioUpload函数中的createWaveform定义
+            function createWaveform(prefix) {
+                const audioWave = document.getElementById(`${prefix}_audio_wave`);
+                if (!audioWave) return;
+                
+                audioWave.innerHTML = '';
+                // 创建30个波形条
+                for (let i = 0; i < 30; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'audio-wave-bar';
+                    // 随机高度创造波形效果
+                    bar.style.height = `${Math.random() * 30 + 5}px`;
+                    // 错开动画时间
+                    bar.style.animationDelay = `${i * 0.05}s`;
+                    audioWave.appendChild(bar);
+                }
+            }
+            
+            // 处理文件上传
+            function handleFileUpload(file) {
+                if (!file) return;
+                
+                // 显示文件名
+                audioName.textContent = file.name;
+                
+                // 显示文件大小
+                const sizeKB = (file.size / 1024).toFixed(1);
+                audioSize.textContent = `${sizeKB} KB`;
+                
+                // 创建音频URL
+                const audioURL = URL.createObjectURL(file);
+                audioPlayer.src = audioURL;
+                
+                // 加载音频以获取时长
+                audioPlayer.onloadedmetadata = function() {
+                    const minutes = Math.floor(audioPlayer.duration / 60);
+                    const seconds = Math.floor(audioPlayer.duration % 60);
+                    audioDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                };
+                
+                // 创建波形
+                createWaveform();
+                
+                // 切换显示状态
+                uploadState.classList.add('hidden');
+                previewState.classList.remove('hidden');
+            }
+            
+            // 点击上传区域触发文件选择
+            uploadState.addEventListener('click', function(e) {
+                if (!e.target.closest('label')) {
+                    fileInput.click();
+                }
+            });
+            
+            // 文件选择变化
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    handleFileUpload(this.files[0]);
+                }
+            });
+            
+            // 拖放功能
+            container.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                container.classList.add('drag-over');
+            });
+            
+            container.addEventListener('dragleave', function() {
+                container.classList.remove('drag-over');
+            });
+            
+            container.addEventListener('drop', function(e) {
+                e.preventDefault();
+                container.classList.remove('drag-over');
+                
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    // 检查是否为音频文件
+                    if (e.dataTransfer.files[0].type.startsWith('audio/')) {
+                        handleFileUpload(e.dataTransfer.files[0]);
+                        // 更新隐藏的input值
+                        fileInput.files = e.dataTransfer.files;
+                    }
+                }
+            });
+            
+            // 移除音频
+            removeButton.addEventListener('click', function() {
+                // 重置文件输入
+                fileInput.value = '';
+                // 清除预设选择
+                document.getElementById('preset_voices').value = '';
+                document.getElementById('prompt_audio_example').value = '';
+                
+                // 释放音频URL
+                if (audioPlayer.src) {
+                    URL.revokeObjectURL(audioPlayer.src);
+                    audioPlayer.src = '';
+                }
+                
+                // 切换显示状态
+                previewState.classList.add('hidden');
+                uploadState.classList.remove('hidden');
+            });
+            
+            // 播放时波形动画
+            audioPlayer.addEventListener('play', function() {
+                const bars = audioWave.querySelectorAll('.audio-wave-bar');
+                bars.forEach(bar => {
+                    bar.style.animationPlayState = 'running';
+                });
+            });
+            
+            // 暂停时波形动画
+            audioPlayer.addEventListener('pause', function() {
+                const bars = audioWave.querySelectorAll('.audio-wave-bar');
+                bars.forEach(bar => {
+                    bar.style.animationPlayState = 'paused';
+                });
+            });
+        }
+        // 加载预设音色列表
+        function loadPresetVoices() {
+            const selectElement = document.getElementById('preset_voices');
+            
+            // 从服务器获取feature_cache文件夹中的音频文件列表
+            fetch('/get-preset-voices')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.voices && data.voices.length > 0) {
+                        // 清空现有选项（保留第一个提示选项）
+                        while (selectElement.options.length > 1) {
+                            selectElement.remove(1);
+                        }
+                        
+                        // 添加音色选项
+                        data.voices.forEach(voice => {
+                            const option = document.createElement('option');
+                            option.value = voice.path;
+                            option.textContent = voice.name;
+                            selectElement.appendChild(option);
+                        });
+                        
+                        // 绑定选择事件
+                        selectElement.addEventListener('change', function() {
+                            const selectedVoicePath = this.value;
+                            if (selectedVoicePath) {
+                                // 选择预设音色时先暂停当前播放的音频
+                                const audioPlayer = document.getElementById('prompt_audio_player');
+                                if (audioPlayer) audioPlayer.pause();
+                                
+                                // 加载并显示选中的预设音色
+                                selectPresetVoice(selectedVoicePath);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('加载预设音色失败:', error);
+                });
+        }
+
+        // 选择预设音色
+        // 选择预设音色
+        function selectPresetVoice(voicePath) {
+            // 获取文件名（从路径中提取）
+            const fileName = voicePath.split('/').pop();
+            const filePath = `/${fileName}`;
+            
+            // 获取DOM元素
+            const uploadState = document.getElementById('prompt_audio_upload_state');
+            const previewState = document.getElementById('prompt_audio_preview_state');
+            const audioName = document.getElementById('prompt_audio_name');
+            const audioPlayer = document.getElementById('prompt_audio_player');
+            const audioDuration = document.getElementById('prompt_audio_duration');
+            const audioSize = document.getElementById('prompt_audio_size');
+            const promptAudioExample = document.getElementById('prompt_audio_example');
+            const fileInput = document.getElementById('prompt_audio');
+            
+            // 重置文件输入
+            fileInput.value = '';
+            
+            // 设置示例音频路径
+            promptAudioExample.value = voicePath;
+            
+            // 更新显示的文件名
+            audioName.textContent = fileName;
+            
+            // 设置音频源
+            audioPlayer.src = filePath;
+            
+            // 创建波形
+            createWaveform('prompt');
+            
+            // 切换显示状态
+            uploadState.classList.add('hidden');
+            previewState.classList.remove('hidden');
+            
+            // 加载音频以获取时长和大小
+            audioPlayer.onloadedmetadata = function() {
+                // 计算并显示时长
+                const minutes = Math.floor(audioPlayer.duration / 60);
+                const seconds = Math.floor(audioPlayer.duration % 60);
+                audioDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // 获取并显示文件大小
+                fetch(filePath, { method: 'HEAD' })
+                    .then(response => {
+                        const fileSize = response.headers.get('Content-Length');
+                        if (fileSize) {
+                            const sizeKB = (parseInt(fileSize) / 1024).toFixed(1);
+                            audioSize.textContent = `${sizeKB} KB`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取文件大小失败:', error);
+                        audioSize.textContent = '未知大小';
+                    });
+            };
+            
+            // 处理音频加载错误
+            audioPlayer.onerror = function() {
+                console.error('音频加载失败');
+                audioDuration.textContent = '加载失败';
+                audioSize.textContent = '加载失败';
+            };
+        }              
+        // 更新分句结果
+        function updateSegments() {
+            const text = document.getElementById('input_text').value;
+            const maxTokens = document.getElementById('max_text_tokens_per_segment').value;
+            const tableBody = document.getElementById('segments_table_body');
+            
+            if (!text.trim()) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-4 px-3 text-center text-sm text-silver/60">输入铭文后显分句之果</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            fetch('/segment-text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: text,
+                    max_tokens: maxTokens
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.segments && data.segments.length > 0) {
+                    let html = '';
+                    data.segments.forEach(segment => {
+                        html += `
+                            <tr>
+                                <td class="py-2 px-3 text-sm border-b border-gold/10">${segment.index}</td>
+                                <td class="py-2 px-3 text-sm border-b border-gold/10">${segment.text}</td>
+                                <td class="py-2 px-3 text-sm border-b border-gold/10">${segment.tokens}</td>
+                            </tr>
+                        `;
+                    });
+                    tableBody.innerHTML = html;
+                } else {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="py-4 px-3 text-center text-sm text-silver/60">无法生成分句结果</td>
+                        </tr>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error updating segments:', error);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-4 px-3 text-center text-sm text-red-400">更新分句时出错</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        // 生成音频
+        function generateAudio() {
+            const text = document.getElementById('input_text').value;
+            if (!text.trim()) {
+                alert('请铸刻目标铭文');
+                return;
+            }
+
+            // 获取情绪控制方式（0=默认，1=调整情绪）
+            const emoControlMethod = document.getElementById('emo_control_toggle').value;
+
+            // 显示生成状态
+            document.getElementById('output_container').classList.add('hidden');
+            document.getElementById('generation_status').classList.remove('hidden');
+
+            // 构建FormData
+            const formData = new FormData();
+            formData.append('text', text);
+            formData.append('emo_control_method', emoControlMethod);
+
+            // 传递音色参考音频（必选）
+            const promptAudio = document.getElementById('prompt_audio');
+            const promptAudioExample = document.getElementById('prompt_audio_example');
+            if (promptAudio.files && promptAudio.files[0]) {
+                formData.append('prompt_audio', promptAudio.files[0]);
+            } else if (promptAudioExample.value) {
+                formData.append('prompt_audio_example', promptAudioExample.value);
+            } else {
+                alert('请提供音色之范');
+                document.getElementById('generation_status').classList.add('hidden');
+                return;
+            }
+
+            // 仅当“调整情绪”时，传递情绪向量
+            if (emoControlMethod == 1) {
+                for (let i = 1; i <= 8; i++) {
+                    formData.append(`vec${i}`, document.getElementById(`vec${i}`).value);
+                }
+            }
+
+            // 传递其他高级参数
+            formData.append('max_text_tokens_per_segment', document.getElementById('max_text_tokens_per_segment').value);
+            formData.append('do_sample', document.getElementById('do_sample').checked);
+            formData.append('top_p', document.getElementById('top_p').value);
+            formData.append('top_k', document.getElementById('top_k').value);
+            formData.append('temperature', document.getElementById('temperature').value);
+            formData.append('length_penalty', document.getElementById('length_penalty').value);
+            formData.append('num_beams', document.getElementById('num_beams').value);
+            formData.append('repetition_penalty', document.getElementById('repetition_penalty').value);
+            formData.append('max_mel_tokens', document.getElementById('max_mel_tokens').value);
+
+            // 发送生成请求
+            fetch('/generate', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('generation_status').classList.add('hidden');
+                if (data.status === 'success' && data.audio_path) {
+                    const audioElement = document.getElementById('output_audio');
+                    audioElement.src = data.audio_path;
+                    audioElement.classList.remove('hidden');
+                    document.getElementById('output_container').classList.remove('hidden');
+                } else {
+                    alert(`铸刻失败: ${data.message || '未知之误'}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error generating audio:', error);
+                document.getElementById('generation_status').classList.add('hidden');
+                alert('铸刻声韵时生误');
+            });
+        }
+        
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,3709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错金流 | 声纹铸刻</title>
+    <!-- 引入外部资源 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- 配置Tailwind自定义颜色 - 错金银色调 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'gold': '#D4AF37',      // 金色
+                        'gold-light': '#F8EFD4', // 浅金
+                        'silver': '#C0C0C0',    // 银色
+                        'silver-light': '#E8E8E8', // 浅银
+                        'ink': '#232323',       // 墨黑（深邃底色）
+                        'ink-light': '#3A3A3A', // 浅墨
+                        'bronze': '#8D6E63',    // 青铜色
+                        'bronze-dark': '#5D4037', // 深青铜
+                    },
+                    fontFamily: {
+                        'song': ['"Noto Serif SC"', 'serif'],
+                        'sans': ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'golden': '0 2px 15px rgba(212, 175, 55, 0.15)',
+                        'deep': 'inset 0 0 15px rgba(0, 0, 0, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 - 错金银效果 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .gold-gradient {
+                background: linear-gradient(135deg, #D4AF37 0%, #F8EFD4 50%, #D4AF37 100%);
+            }
+            .silver-gradient {
+                background: linear-gradient(135deg, #C0C0C0 0%, #E8E8E8 50%, #C0C0C0 100%);
+            }
+            .ink-gradient {
+                background: linear-gradient(135deg, #232323 0%, #3A3A3A 100%);
+            }
+            .gold-border {
+                border-image: linear-gradient(to right, #D4AF37, #F8EFD4) 1;
+            }
+            .engraved {
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+            }
+            .relief {
+                text-shadow: 0 -1px 1px rgba(255, 255, 255, 0.1);
+            }
+            .bg-pattern {
+                background-image: 
+                    radial-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+                    radial-gradient(rgba(192, 192, 192, 0.02) 1px, transparent 1px);
+                background-size: 50px 50px;
+                background-position: 0 0, 25px 25px;
+            }
+        }
+    </style>
+    
+    <style>
+        /* 导入字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap');
+        
+        /* 全局样式 - 错金银质感 */
+        body {
+            -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth;
+            background-color: #232323;
+        }
+        
+        /* 错金银线条纹理 */
+        .gold-inlay {
+            position: relative;
+        }
+
+        /* 优化过渡动画 */
+        .dot {
+        transition: transform 0.3s ease, background-color 0.3s ease;
+        }       
+        .gold-inlay::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px),
+                linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        
+        /* 自定义滚动条 - 金属质感 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #3A3A3A;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #D4AF37, #C0C0C0);
+            border-radius: 3px;
+        }
+        
+        /* 进度条动画 - 金属流动感 */
+        @keyframes goldFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .gold-flow {
+            background: linear-gradient(90deg, #D4AF37, #F8EFD4, #D4AF37);
+            background-size: 200% 100%;
+            animation: goldFlow 3s ease infinite;
+        }
+        
+        /* 按钮悬停效果 - 金属光泽 */
+        .metal-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metal-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: all 0.6s ease;
+        }
+        
+        .metal-btn:hover::before {
+            left: 100%;
+        }
+        
+        /* 青铜器纹饰背景 */
+        .bronze-pattern {
+            background-image: 
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D4AF37' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        /* 音频上传区域样式 */
+        .audio-upload {
+            transition: all 0.3s ease;
+        }
+        
+        .audio-upload.drag-over {
+            border-color: #D4AF37;
+            background-color: rgba(212, 175, 55, 0.1);
+            transform: scale(1.01);
+        }
+        
+        /* 音频波形可视化 */
+        .audio-wave {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 0 5px;
+        }
+        
+        .audio-wave-bar {
+            width: 2px;
+            background: linear-gradient(to top, #D4AF37, #F8EFD4);
+            border-radius: 1px;
+            animation: wave 1s infinite ease-in-out;
+        }
+        
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1); }
+        }
+
+        /* 预设音色卡片样式 */
+        .voice-card {
+            transition: all 0.3s ease;
+        }
+        
+        .voice-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.15);
+        }
+        
+        .voice-card.active {
+            border-color: #D4AF37;
+            background-color: rgba(212, 175, 55, 0.05);
+        }
+        
+        /* 加载动画 */
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 50%;
+            border-top-color: #D4AF37;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .dot {
+        transition: transform 0.3s ease;
+        }        
+        /* 音色分类标签样式 */
+        .category-tag {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .category-tag::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: linear-gradient(90deg, #D4AF37, #F8EFD4);
+            transition: width 0.3s ease;
+        }
+        
+        .category-tag.active {
+            color: #D4AF37;
+        }
+        
+        .category-tag.active::after {
+            width: 100%;
+        }
+        
+        /* 分类统计数字 */
+        .category-count {
+            font-size: 0.7em;
+            opacity: 0.7;
+        }
+        
+        /* 分类切换动画 */
+        .category-content {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 声音波纹效果 */
+        #audio_wave_container {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #audio_wave_container.playing {
+            opacity: 1;
+        }
+
+        .audio-wave-circle {
+            position: absolute;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 50%;
+            animation: waveExpand 2s infinite ease-out;
+        }
+
+        /* 三个波纹的不同初始大小和动画延迟 */
+        .audio-wave-circle:nth-child(1) {
+            width: 40px;
+            height: 40px;
+            animation-delay: 0s;
+        }
+
+        .audio-wave-circle:nth-child(2) {
+            width: 60px;
+            height: 60px;
+            animation-delay: 0.3s;
+        }
+
+        .audio-wave-circle:nth-child(3) {
+            width: 80px;
+            height: 80px;
+            animation-delay: 0.6s;
+        }
+
+        @keyframes waveExpand {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* 播放按钮状态 */
+        #prompt_audio_play_btn.playing i {
+            content: "\f04c"; /* 暂停图标 */
+        }
+
+        /* 左侧导航样式 */
+        .sidebar {
+            transition: all 0.3s ease;
+            border-right: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        
+        .sidebar-item {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-item::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: linear-gradient(to bottom, #D4AF37, #F8EFD4);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-item.active {
+            background-color: rgba(212, 175, 55, 0.1);
+            color: #D4AF37;
+        }
+        
+        .sidebar-item.active::after {
+            transform: translateX(0);
+        }
+        
+        /* 页面切换动画 */
+        .page-content {
+            animation: fadeIn 0.4s ease forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* 音色库标签页样式 */
+        .voice-library-tab {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .voice-library-tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #D4AF37, #F8EFD4);
+            transition: width 0.3s ease;
+        }
+        
+        .voice-library-tab.active {
+            color: #D4AF37;
+        }
+        
+        .voice-library-tab.active::after {
+            width: 100%;
+        }
+
+        /* 收藏按钮样式 */
+        .favorite-btn {
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+        
+        .voice-card:hover .favorite-btn {
+            opacity: 1;
+        }
+        
+        .favorite-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .favorite-btn.favorited {
+            color: #D4AF37;
+            opacity: 1;
+        }
+        /* 音色库卡片样式优化 */
+        .voice-card {
+            transition: all 0.3s ease;
+        }
+        
+        .voice-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.1);
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+        
+        /* 收藏按钮样式 */
+        .favorite-btn {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .favorite-btn.favorited {
+            color: #D4AF37;
+        }
+        
+        /* 筛选下拉框样式 */
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23D4AF37' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 30px;
+            appearance: none;
+        }
+        .play-btn {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .play-btn .play-animation {
+            transform: scale(0);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .play-btn.playing i {
+            content: "\f04c"; 
+        }
+
+        .play-btn.playing .play-animation {
+            animation: wavePulse 1.5s infinite;
+        }
+
+        @keyframes wavePulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+        /* 在<style>标签中添加 */
+        .modal-voice-tab {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .modal-voice-tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #D4AF37, #F8EFD4);
+            transition: width 0.3s ease;
+        }
+
+        .modal-voice-tab.active {
+            color: #D4AF37;
+        }
+
+        .modal-voice-tab.active::after {
+            width: 100%;
+        }
+        /* 音色库分类样式 */
+        .category-section {
+            margin-bottom: 10px;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-header:hover {
+            background-color: rgba(212, 175, 55, 0.1);
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+
+        .category-title {
+            font-weight: 500;
+            color: #D4AF37;
+            display: flex;
+            align-items: center;
+        }
+
+        .category-title i {
+            margin-right: 8px;
+            font-size: 0.9em;
+        }
+
+        .category-count {
+            background-color: rgba(212, 175, 55, 0.2);
+            color: #D4AF37;
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .category-content {
+            margin-top: 6px;
+            padding: 8px 12px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            border-radius: 6px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+        .category-toggle {
+            transition: transform 0.3s ease;
+        }
+
+        .category-header.expanded .category-toggle {
+            transform: rotate(180deg);
+        }
+        /* 历史记录样式 */
+        .history-container {
+            space-y-4;
+        }
+
+        .history-filters {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .history-search {
+            relative;
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .history-actions {
+            display: flex;
+            space-x-2;
+        }
+
+        .history-item {
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            border-color: rgba(212, 175, 55, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.05);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-title {
+            font-weight: 500;
+            color: #D4AF37;
+            margin-bottom: 4px;
+        }
+
+        .history-meta {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+        }
+
+        .history-meta i {
+            margin-right: 4px;
+        }
+
+        .history-actions-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .history-date {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 4px;
+        }
+
+        .history-text {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+            max-height: 60px;
+            overflow-y: auto;
+        }
+
+        .history-audio {
+            margin-top: 10px;
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .empty-history i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: rgba(212, 175, 55, 0.2);
+        }
+    </style>
+</head>
+<body class="font-sans text-silver-light min-h-screen bg-pattern scroll-pattern">
+    <div class="flex min-h-screen">
+        <!-- 左侧导航 -->
+        <aside class="sidebar w-64 bg-ink h-screen sticky top-0 flex flex-col">
+            <div class="p-6 border-b border-gold/20">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-lg ink-gradient border border-gold/30 flex items-center justify-center gold-inlay">
+                        <i class="fa fa-magic text-gold"></i>
+                    </div>
+                    <h1 class="text-xl font-song font-semibold text-gold-light engraved">错金流</h1>
+                </div>
+                <p class="text-sm text-silver/60 mt-2">声纹铸刻 · 匠心之作</p>
+            </div>
+            
+            <nav class="flex-1 py-6">
+                <ul class="space-y-1 px-3">
+                    <li>
+                        <a href="#" class="sidebar-item active flex items-center px-4 py-3 text-lg rounded-lg" data-page="home">
+                            <i class="fa fa-home w-6"></i>
+                            <span class="ml-3">首页</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-item flex items-center px-4 py-3 text-lg rounded-lg" data-page="voice-library">
+                            <i class="fa fa-music w-6"></i>
+                            <span class="ml-3">音色库</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-item flex items-center px-4 py-3 text-lg rounded-lg" data-page="history">
+                            <i class="fa fa-history w-6"></i>
+                            <span class="ml-3">历史记录</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-item flex items-center px-4 py-3 text-lg rounded-lg" data-page="settings">
+                            <i class="fa fa-cog w-6"></i>
+                            <span class="ml-3">设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="p-4 border-t border-gold/20">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-ink-light flex items-center justify-center border border-gold/20">
+                        <i class="fa fa-user text-silver"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gold-light">用户</p>
+                        <p class="text-xs text-silver/60">个人账户</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="flex-1">
+            <!-- 首页内容 -->
+            <div id="home-page" class="page-content container mx-auto px-4 py-8 max-w-6xl">
+                <!-- 页面标题 - 错金铭文风格 -->
+                <div class="text-center mb-12 relative">
+                    <h1 class="text-[clamp(1.8rem,5vw,2.8rem)] font-song font-bold text-gold-light mb-3 engraved relative">声纹铸刻</h1>
+                    <p class="text-silver max-w-lg mx-auto relative">取声之质，融金之美，铸刻于音</p>
+                    <!-- 装饰线条 -->
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+
+                <!-- 主要内容区 -->
+                <div class="space-y-8">
+                    <!-- 音频生成面板 - 仿青铜器质感 -->
+                    <section class="bg-ink-light rounded-xl border border-gold/10 shadow-deep p-6 md:p-8 transition-all duration-500 hover:border-gold/30 relative overflow-hidden bronze-pattern">
+                        <!-- 背景纹饰 -->
+                        <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+                            <div class="w-full h-full bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23d4af37\" fill-opacity=\"1\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+                        </div>
+                        
+                        <!-- 主要输入区域 -->
+                        <div class="relative">                 
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- 音色参考音频 - 仿金属容器 -->
+                                <div class="space-y-3">
+                                    <label class="block text-gold font-medium relief flex items-center justify-center">
+                                        <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs">壹</div>
+                                        音色之范
+                                    </label>
+                                    
+                                    <!-- 上传区域（核心显示容器） -->
+                                    <div class="audio-upload border-2 border-dashed border-gold/30 rounded-xl p-4 hover:border-gold/60 transition-all duration-300 bg-ink/50 gold-inlay min-h-[220px]" id="prompt_audio_container">
+                                        <!-- 未上传状态 -->
+                                        <div id="prompt_audio_upload_state" class="text-center">
+                                            <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center rounded-full bg-ink-light/50">
+                                                <i class="fa fa-volume-up text-2xl text-gold/70"></i>
+                                            </div>
+                                            <p class="text-sm text-silver mb-2">拖放音频文件于此，或</p>
+                                            <label class="metal-btn inline-block px-4 py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors cursor-pointer">
+                                                <i class="fa fa-upload mr-1"></i>选择文件
+                                                <input type="file" id="prompt_audio" accept="audio/*" class="hidden" />
+                                            </label>
+                                            <p class="text-xs text-silver/70 mt-2">可纳 MP3, WAV, AAC 诸般</p>
+                                        </div>
+                                        
+                                        <!-- 上传后状态 (默认隐藏，选择预设后显示) -->
+                                        
+                                        <div id="prompt_audio_preview_state" class="hidden space-y-3">
+                                            <!-- 音频信息 -->
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <i class="fa fa-file-audio-o text-gold mr-2"></i>
+                                                    <span id="prompt_audio_name" class="text-sm truncate max-w-[180px]"></span>
+                                                </div>
+                                                <button id="prompt_audio_remove" class="text-silver/60 hover:text-gold transition-colors">
+                                                    <i class="fa fa-times"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- 播放按钮和波纹容器 -->
+                                            <div class="relative flex justify-center items-center py-6">
+                                                <!-- 播放按钮 -->
+                                                <button id="prompt_audio_play_btn" class="metal-btn w-16 h-16 rounded-full bg-gold/20 hover:bg-gold/30 text-gold flex items-center justify-center z-10 transition-all">
+                                                    <i class="fa fa-play text-xl"></i>
+                                                </button>
+                                                
+                                                <!-- 声音波纹容器 -->
+                                                <div id="audio_wave_container" class="absolute flex items-center justify-center">
+                                                    <div class="audio-wave-circle"></div>
+                                                    <div class="audio-wave-circle"></div>
+                                                    <div class="audio-wave-circle"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 隐藏的音频元素 -->
+                                            <audio id="prompt_audio_player" class="hidden"></audio>
+                                            
+                                            <!-- 音频时长/大小 -->
+                                            <div class="flex justify-between text-xs text-silver/60">
+                                                <span id="prompt_audio_duration">00:00</span>
+                                                <span id="prompt_audio_size">0 KB</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 预设音色选择（带分类功能） -->
+                                    <div class="mt-4">
+                                        <button id="open_voice_library" class="metal-btn w-full py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors flex items-center justify-center">
+                                            <i class="fa fa-music mr-2"></i>选择音色
+                                        </button>
+                                    </div>
+                                 
+                                    <input type="hidden" id="prompt_audio_example" value="" />
+                                </div>
+                                
+                                <!-- 文本输入和生成按钮 -->
+                                <div class="space-y-3">
+                                    <label class="block text-gold font-medium relief flex items-center justify-center">
+                                        <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs ">贰</div>
+                                        铭文之辞
+                                    </label>
+                                    <textarea 
+                                        id="input_text" 
+                                        placeholder="请铸刻目标铭文" 
+                                        class="w-full h-32 p-3 bg-ink border border-gold/30 rounded-lg focus:border-gold focus:outline-none transition-colors resize-none text-silver placeholder-silver/50 min-h-[220px]"
+                                    ></textarea>
+                                    
+                                    
+                                    <button 
+                                        id="gen_button" 
+                                        class="metal-btn w-full py-3 gold-gradient text-ink font-medium rounded-lg hover:opacity-90 transition-all duration-300 shadow-golden flex items-center justify-center mt-2"
+                                    >
+                                        <i class="fa fa-magic mr-2"></i>铸刻声韵
+                                    </button>
+                                </div>
+                                
+                                <!-- 生成结果 -->
+                                <div class="space-y-3">
+                                    <label class="block text-gold font-medium relief flex items-center justify-center">
+                                        <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs">叁</div>
+                                        成器之音
+                                    </label>
+                                    <div id="output_container" class="border border-gold/30 rounded-lg p-4 min-h-[100px] flex flex-col items-center justify-center bg-ink/50 gold-inlay min-h-[220px]">
+                                            <!-- 音频波形显示 -->
+                                        <div id="output_audio_waveform" class="mb-3 h-12 w-full"></div>
+                             
+                                        <div id="custom_audio_player" class="w-full mt-2 hidden">
+                                            <div class="flex items-center space-x-3 mb-2">
+                                                <button id="custom_play_btn" class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center text-gold hover:bg-gold/30 transition-colors">
+                                                    <i class="fa fa-play"></i>
+                                                </button>
+                                                <div class="flex-1 h-1 bg-ink rounded-full overflow-hidden">
+                                                    <div id="progress_bar" class="h-full gold-flow w-0"></div>
+                                                </div>
+                                                <span id="time_display" class="text-xs text-silver/70">00:00 / 00:00</span>
+                                            </div>
+                                            
+
+                                            
+                                            <div class="flex items-center justify-between text-xs text-silver/60">
+                                                <div>
+                                                    <button id="download_btn" class="flex items-center space-x-1 hover:text-gold transition-colors">
+                                                        <i class="fa fa-download"></i>
+                                                        <span>下载</span>
+                                                    </button>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <label class="text-silver/70">语速:</label>
+                                                    <input type="range" id="speed_control" min="0.1" max="2" step="0.05" value="1.0" class="w-32 accent-gold">
+                                                    <span id="speed_value" class="text-silver/70">1.0x</span>
+                                                </div>
+                                            </div>
+                                            <audio id="output_audio" class="hidden"></audio>
+                                        </div>
+                                    </div>
+                                    <div id="generation_status" class="hidden text-center py-4">
+                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold"></div>
+                                        <p class="text-sm text-silver mt-2">正在铸刻声韵...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 功能设置 -->
+                        <div class="px-6 py-4 border-t border-gold/20" >
+                            <div class="flex items-center cursor-pointer" id="settings_toggle">
+                                <h3 class="text-lg font-song text-gold-light engraved">
+                                    <i class="fa fa-cogs mr-2"></i>技艺调校
+                                </h3>
+                                <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="settings_chevron"></i>
+                            </div>
+                            
+                            <div id="settings_content" class="mt-4 space-y-4  hidden">
+                                <!-- 情绪控制开关 -->
+                                <div class="space-y-2">
+                                    <label class="block text-gold font-medium relief">
+                                        <i class="fa fa-heart mr-1"></i>情绪控制
+                                    </label>
+                                    <label class="inline-flex items-center cursor-pointer" id="emo_control_switch">
+                                        <div class="relative">
+                                            <!-- 开关隐藏的输入框（value=0=默认，1=调整情绪） -->
+                                            <input type="checkbox" id="emo_control_toggle" class="sr-only" value="0">
+                                            <!-- 开关样式 -->
+                                            <div class="w-14 h-7 bg-ink rounded-full border border-silver/30 transition-all hover:border-gold/30"></div>
+                                            <div class="dot absolute left-1 top-1 bg-silver/60 w-5 h-5 rounded-full transition-all hover:bg-gold/60"></div>
+                                        </div>
+                                        <span class="ml-3 text-sm text-silver">调整情绪</span>
+                                    </label>
+                                </div>
+                                
+                                <!-- 情绪向量面板（默认隐藏） -->
+                                <div id="emotion_vector_group" class="hidden space-y-3 p-4 border border-gold/20 rounded-lg bg-ink/30 gold-inlay">
+                                    <h4 class="text-gold font-medium relief">情绪维度调整</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">喜</label>
+                                                <input type="range" id="vec1" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">怒</label>
+                                                <input type="range" id="vec2" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">哀</label>
+                                                <input type="range" id="vec3" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">惧</label>
+                                                <input type="range" id="vec4" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                        </div>
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">厌恶</label>
+                                                <input type="range" id="vec5" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">低落</label>
+                                                <input type="range" id="vec6" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">惊喜</label>
+                                                <input type="range" id="vec7" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">平静</label>
+                                                <input type="range" id="vec8" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 高级生成参数设置 -->
+                        <div class="px-6 py-4 border-t border-gold/20" hidden>
+                            <div class="flex items-center cursor-pointer" id="advanced_settings_toggle">
+                                <h3 class="text-lg font-song text-gold-light engraved">
+                                    <i class="fa fa-sliders mr-2"></i>精工细作
+                                </h3>
+                                <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="advanced_settings_chevron"></i>
+                            </div>
+                            
+                            <div id="advanced_settings_content" class="mt-4 hidden space-y-4">
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <!-- GPT2 采样设置 -->
+                                    <div class="col-span-1 space-y-4">
+                                        <h4 class="text-gold font-medium relief">GPT2 采法</h4>
+                                        <p class="text-xs text-silver/60">参数影响声韵之变与铸刻之速</p>
+                                        
+                                        <div class="space-y-3">
+                                            <div class="flex items-center justify-between">
+                                                <label class="inline-flex items-center text-sm text-silver">
+                                                    <div class="relative">
+                                                        <input type="checkbox" id="do_sample" checked class="sr-only">
+                                                        <div class="w-10 h-6 bg-ink rounded-full border border-gold/30"></div>
+                                                        <div class="dot absolute left-1 top-1 bg-gold w-4 h-4 rounded-full transition transform translate-x-4"></div>
+                                                    </div>
+                                                    <span class="ml-3">do_sample</span>
+                                                </label>
+                                                <div class="flex items-center">
+                                                    <label class="text-sm mr-2 text-silver">temperature</label>
+                                                    <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="0.8" class="w-24 accent-gold">
+                                                    <span id="temperature_value" class="text-sm ml-2 text-silver">0.8</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">top_p</label>
+                                                    <input type="range" id="top_p" min="0.0" max="1.0" step="0.01" value="0.8" class="w-full accent-gold">
+                                                    <span id="top_p_value" class="text-xs text-silver">0.8</span>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">top_k</label>
+                                                    <input type="range" id="top_k" min="0" max="100" step="1" value="30" class="w-full accent-gold">
+                                                    <span id="top_k_value" class="text-xs text-silver">30</span>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">num_beams</label>
+                                                    <input type="range" id="num_beams" min="1" max="10" step="1" value="3" class="w-full accent-gold">
+                                                    <span id="num_beams_value" class="text-xs text-silver">3</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">repetition_penalty</label>
+                                                    <input type="number" id="repetition_penalty" value="10.0" min="0.1" max="20.0" step="0.1" 
+                                                           class="w-full text-sm p-1 bg-ink border border-gold/30 rounded text-silver accent-gold">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">length_penalty</label>
+                                                    <input type="number" id="length_penalty" value="0.0" min="-2.0" max="2.0" step="0.1" 
+                                                           class="w-full text-sm p-1 bg-ink border border-gold/30 rounded text-silver accent-gold">
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-xs text-silver/60 mb-1">max_mel_tokens</label>
+                                                <input type="range" id="max_mel_tokens" min="50" max="2000" step="10" value="1500" class="w-full accent-gold">
+                                                <div class="flex justify-between text-xs text-silver/60">
+                                                    <span>50</span>
+                                                    <span id="max_mel_tokens_value" class="text-silver">1500</span>
+                                                    <span>2000</span>
+                                                </div>
+                                                <p class="text-xs text-silver/50 mt-1">铸刻Token之极数，过小则声韵截断</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 分句设置 -->
+                                    <div class="col-span-1 lg:col-span-2 space-y-4">
+                                        <h4 class="text-gold font-medium relief">分句之法</h4>
+                                        <p class="text-xs text-silver/60">参数影响声韵之质与铸刻之速</p>
+                                        
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-xs text-silver/60 mb-1">分句最大Token数</label>
+                                                <input type="range" id="max_text_tokens_per_segment" min="20" 
+                                                       max="200" 
+                                                       step="2" value="100" class="w-full accent-gold">
+                                                <div class="flex justify-between text-xs text-silver/60">
+                                                    <span>20</span>
+                                                    <span id="max_text_tokens_value" class="text-silver">100</span>
+                                                    <span>200</span>
+                                                </div>
+                                                <p class="text-xs text-silver/50 mt-1">建议80~200之间，值大则句长，值小则句碎；过小过大皆可致声韵不精</p>
+                                            </div>
+                                            
+                                            <!-- 预览分句结果 -->
+                                            <div>
+                                                <div class="flex items-center cursor-pointer" id="segments_toggle">
+                                                    <h5 class="text-gold text-sm font-medium relief">预览分句之果</h5>
+                                                    <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="segments_chevron"></i>
+                                                </div>
+                                                
+                                                <div id="segments_content" class="mt-2 overflow-x-auto">
+                                                    <table class="min-w-full border border-gold/20 rounded-lg bg-ink/30">
+                                                        <thead>
+                                                            <tr class="bg-gold/10">
+                                                                <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">序</th>
+                                                                <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">分句之文</th>
+                                                                <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">Token数</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="segments_table_body" class="text-silver text-sm">
+                                                            <tr>
+                                                                <td colspan="3" class="py-4 px-3 text-center text-sm text-silver/60">输入铭文后显分句之果</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                
+                <!-- 页脚 - 仿款识 -->
+                <footer class="mt-12 text-center text-silver/60 text-sm py-6 border-t border-gold/20 font-song">
+                    <p>错金流 · 声纹铸刻 · 岁在癸卯 · 匠心之作</p>
+                </footer>
+            </div>
+
+            <!-- 音色库页面 -->
+            <div id="voice-library-page" class="page-content container mx-auto px-4 py-8 max-w-6xl hidden">
+                <!-- 页面标题 -->
+                <div class="text-center mb-10 relative">
+                    <h1 class="text-[clamp(1.5rem,4vw,2.5rem)] font-song font-bold text-gold-light mb-3 engraved relative">音色库</h1>
+                    <p class="text-silver max-w-lg mx-auto relative">精选之声，铸刻之基</p>
+                    <!-- 装饰线条 -->
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+
+                <!-- 音色库标签页 -->
+                <div class="mb-6 border-b border-gold/20">
+                    <div class="flex space-x-8">
+                        <div class="voice-library-tab active py-3 px-1 cursor-pointer" data-tab="all-voices">
+                            <h2 class="text-lg font-song text-gold-light">全部音色</h2>
+                        </div>
+                        <div class="voice-library-tab py-3 px-1 cursor-pointer" data-tab="favorite-voices">
+                            <h2 class="text-lg font-song text-gold-light">收藏音色</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 全部音色内容 -->
+                <div id="all-voices-content" class="space-y-6">
+                    <!-- 搜索和筛选 - 修改为动态类别筛选 -->
+                    <div class="flex flex-wrap gap-4">
+                        <div class="relative">
+                            <input type="text" id="library_voice_search" 
+                                class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none"
+                                placeholder="搜索音色...">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                        </div>
+                        
+                        <!-- 动态类别筛选容器 -->
+                        <div id="dynamic-filters-container" class="flex flex-wrap gap-4">
+                            <!-- 加载状态指示器 -->
+                            <div class="dynamic-filter-loading flex items-center">
+                                <div class="loader-sm mr-2"></div>
+                                <span class="text-silver/60 text-sm">加载分类中...</span>
+                            </div>
+                            <!-- 动态生成的筛选下拉框将在这里显示 -->
+                        </div>
+                    </div>
+
+                    <!-- 加载状态 -->
+                    <div id="library_voices_loading" class="flex items-center justify-center py-10 bg-ink-light rounded-xl border border-gold/10">
+                        <div class="loader mr-2"></div>
+                        <span class="text-silver">加载音色库...</span>
+                    </div>
+                    
+                    <!-- 错误状态 -->
+                    <div id="library_voices_error" class="hidden flex items-center justify-center py-10 bg-ink-light rounded-xl border border-red-500/30">
+                        <i class="fa fa-exclamation-triangle text-red-500 mr-2"></i>
+                        <span class="text-red-400">加载音色库失败，请重试</span>
+                    </div>
+                    
+                    <!-- 分类加载错误提示 -->
+                    <div id="filters_load_error" class="hidden text-sm text-red-400 mt-1">
+                        <i class="fa fa-exclamation-circle mr-1"></i>分类加载失败
+                    </div>
+                    
+                    <!-- 音色列表 - 修改为列表式布局 -->
+                    <div id="library_voices_container" class="hidden space-y-3">
+                        <!-- 动态加载的音色卡片将在这里显示 -->
+                    </div>
+                    
+                    <!-- 重试按钮 -->
+                    <button id="library_retry_voices" class="hidden w-full mt-2 py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg transition-colors">
+                        <i class="fa fa-refresh mr-1"></i>重新加载
+                    </button>
+                </div>
+
+                <!-- 收藏音色内容 -->
+                <div id="favorite-voices-content" class="hidden space-y-6">
+                    <!-- 搜索和筛选 -->
+                    <div class="flex flex-wrap gap-4">
+                        <div class="relative">
+                            <input type="text" id="favorite_voice_search" 
+                                class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none"
+                                placeholder="搜索收藏的音色...">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- 提示信息 -->
+                    <div id="no_favorites_message" class="py-16 text-center">
+                        <div class="w-20 h-20 mx-auto mb-4 flex items-center justify-center rounded-full bg-ink-light/50">
+                            <i class="fa fa-heart-o text-3xl text-silver/50"></i>
+                        </div>
+                        <p class="text-silver/60">您尚未收藏任何音色</p>
+                        <p class="text-sm text-silver/40 mt-2">在音色库中点击心形图标可收藏喜爱的音色</p>
+                    </div>
+                    
+                    <!-- 收藏的音色列表 - 修改为列表式布局 -->
+                    <div id="favorite_voices_container" class="hidden space-y-3">
+                        <!-- 动态加载的收藏音色卡片将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+
+
+
+            
+            <!-- 历史记录页面 -->
+            <div id="history-page" class="page-content container mx-auto px-4 py-8 max-w-6xl ">
+                <div class="text-center mb-10">
+                    <h1 class="text-[clamp(1.5rem,4vw,2.5rem)] font-song font-bold text-gold-light mb-3">历史记录</h1>
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-ink-light rounded-xl border border-gold/10 p-6">
+                    <!-- 历史记录过滤器 -->
+                    <div class="history-filters mb-6">
+                        <div class="history-search">
+                            <input type="text" id="history_search" 
+                                class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none w-full"
+                                placeholder="搜索历史记录...">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                        </div>
+                        <div class="history-actions">
+                            <button id="clear_history" class="metal-btn px-3 py-1 bg-ink border border-gold/30 hover:bg-gold/20 text-silver hover:text-gold rounded-lg text-sm transition-colors">
+                                <i class="fa fa-trash mr-1"></i>清空记录
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 历史记录列表 -->
+                    <div id="history_list" class="space-y-4">
+                        <!-- 历史记录项将通过JS动态生成 -->
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置页面（占位） -->
+            <div id="settings-page" class="page-content container mx-auto px-4 py-8 max-w-6xl hidden">
+                <div class="text-center mb-10">
+                    <h1 class="text-[clamp(1.5rem,4vw,2.5rem)] font-song font-bold text-gold-light mb-3">设置</h1>
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-ink-light rounded-xl border border-gold/10 p-8 text-center">
+                    <p class="text-silver/60">设置功能开发中</p>
+                </div>
+            </div>
+            <!-- 音色库弹窗 -->
+            
+            <div id="voice_library_modal" class="fixed inset-0 bg-ink/90 z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-ink-light rounded-xl border border-gold/20 w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <!-- 弹窗头部 -->
+                    <div class="p-4 border-b border-gold/20 flex justify-between items-center">
+                        <h2 class="text-xl font-song text-gold-light">选择音色</h2>
+                        <button id="close_voice_library" class="text-silver hover:text-gold transition-colors">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 添加标签页切换 -->
+                    <div class="border-b border-gold/20">
+                        <div class="flex space-x-8">
+                            <div class="modal-voice-tab active py-3 px-1 cursor-pointer" data-tab="modal-all-voices">
+                                <h3 class="text-base font-song text-gold-light">全部音色</h3>
+                            </div>
+                            <div class="modal-voice-tab py-3 px-1 cursor-pointer" data-tab="modal-favorite-voices">
+                                <h3 class="text-base font-song text-gold-light">收藏音色</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 弹窗内容 -->
+                    <div class="flex-1 overflow-y-auto p-4">
+                        <!-- 全部音色内容 -->
+                        <div id="modal-all-voices-content" class="space-y-6">
+                            <!-- 搜索和筛选 -->
+                            <div class="flex flex-wrap gap-4 mb-6">
+                                <div class="relative">
+                                    <input type="text" id="modal_voice_search" 
+                                        class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="搜索音色...">
+                                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                                </div>
+                                
+                                <!-- 动态类别筛选容器 -->
+                                <div id="modal_dynamic-filters-container" class="flex flex-wrap gap-4">
+                                    <!-- 动态生成的筛选下拉框将在这里显示 -->
+                                </div>
+                            </div>
+
+                            <!-- 加载状态 -->
+                            <div id="modal_voices_loading" class="flex items-center justify-center py-10 bg-ink rounded-xl border border-gold/10">
+                                <div class="loader mr-2"></div>
+                                <span class="text-silver">加载音色库...</span>
+                            </div>
+                            
+                            <!-- 错误状态 -->
+                            <div id="modal_voices_error" class="hidden flex items-center justify-center py-10 bg-ink rounded-xl border border-red-500/30">
+                                <i class="fa fa-exclamation-triangle text-red-500 mr-2"></i>
+                                <span class="text-red-400">加载音色库失败，请重试</span>
+                            </div>
+                            
+                            <!-- 音色列表 -->
+                            <div id="modal_voices_container" class="hidden space-y-3">
+                                <!-- 动态加载的音色卡片将在这里显示 -->
+                            </div>
+                            
+                            <!-- 重试按钮 -->
+                            <button id="modal_retry_voices" class="hidden w-full mt-2 py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg transition-colors">
+                                <i class="fa fa-refresh mr-1"></i>重新加载
+                            </button>
+                        </div>
+                        
+                        <!-- 收藏音色内容 -->
+                        <div id="modal-favorite-voices-content" class="hidden space-y-6">
+                            <!-- 搜索和筛选 -->
+                            <div class="flex flex-wrap gap-4">
+                                <div class="relative">
+                                    <input type="text" id="modal_favorite_voice_search" 
+                                        class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="搜索收藏的音色...">
+                                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- 提示信息 -->
+                            <div id="modal_no_favorites_message" class="py-16 text-center">
+                                <div class="w-20 h-20 mx-auto mb-4 flex items-center justify-center rounded-full bg-ink-light/50">
+                                    <i class="fa fa-heart-o text-3xl text-silver/50"></i>
+                                </div>
+                                <p class="text-silver/60">您尚未收藏任何音色</p>
+                                <p class="text-sm text-silver/40 mt-2">在音色库中点击心形图标可收藏喜爱的音色</p>
+                            </div>
+                            
+                            <!-- 收藏的音色列表 -->
+                            <div id="modal_favorite_voices_container" class="hidden space-y-3">
+                                <!-- 动态加载的收藏音色卡片将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // 存储所有示例数据
+        let allExamples = [];
+        // 存储所有预设音色（按分类组织）
+        let voicesByCategory = {
+            'all': [] // 全部音色
+        };
+        // 当前选中的分类
+        let currentCategory = 'all';
+        // 存储收藏的音色
+        let favoriteVoices = JSON.parse(localStorage.getItem('favoriteVoices')) || [];
+        
+        // DOM 元素加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化页面导航
+            initPageNavigation();
+            
+            // 初始化音频上传功能
+            initAudioUpload('prompt');
+            
+            
+            // 初始化音色库
+            initVoiceLibrary();
+            // 初始化收藏功能
+            favoriteVoices = JSON.parse(localStorage.getItem('favoriteVoices')) || [];
+            setupFavoriteButtonEvents();
+            initModalVoiceLibrary();
+            initHistory();
+            // 功能设置折叠/展开
+            const settingsToggle = document.getElementById('settings_toggle');
+            const settingsContent = document.getElementById('settings_content');
+            const settingsChevron = document.getElementById('settings_chevron');
+            
+            settingsToggle.addEventListener('click', function() {
+                settingsContent.classList.toggle('hidden');
+                settingsChevron.classList.toggle('rotate-180');
+            });
+            
+            // 高级设置折叠/展开
+            const advancedToggle = document.getElementById('advanced_settings_toggle');
+            const advancedContent = document.getElementById('advanced_settings_content');
+            const advancedChevron = document.getElementById('advanced_settings_chevron');
+            
+          
+            advancedToggle.addEventListener('click', function() {
+                advancedContent.classList.toggle('hidden');
+                advancedChevron.classList.toggle('rotate-180');
+            });
+            
+            // 分句结果折叠/展开
+            const segmentsToggle = document.getElementById('segments_toggle');
+            const segmentsContent = document.getElementById('segments_content');
+            const segmentsChevron = document.getElementById('segments_chevron');
+            
+            segmentsToggle.addEventListener('click', function() {
+                segmentsContent.classList.toggle('hidden');
+                segmentsChevron.classList.toggle('rotate-180');
+            });
+            
+            // 采样参数显示
+            const temperature = document.getElementById('temperature');
+            const temperatureValue = document.getElementById('temperature_value');
+            temperature.addEventListener('input', function() {
+                temperatureValue.textContent = this.value;
+            });
+            
+            const topP = document.getElementById('top_p');
+            const topPValue = document.getElementById('top_p_value');
+            topP.addEventListener('input', function() {
+                topPValue.textContent = this.value;
+            });
+            
+            const topK = document.getElementById('top_k');
+            const topKValue = document.getElementById('top_k_value');
+            topK.addEventListener('input', function() {
+                topKValue.textContent = this.value;
+            });
+            
+            const numBeams = document.getElementById('num_beams');
+            const numBeamsValue = document.getElementById('num_beams_value');
+            numBeams.addEventListener('input', function() {
+                numBeamsValue.textContent = this.value;
+            });
+            
+            const maxMelTokens = document.getElementById('max_mel_tokens');
+            const maxMelTokensValue = document.getElementById('max_mel_tokens_value');
+            maxMelTokens.addEventListener('input', function() {
+                maxMelTokensValue.textContent = this.value;
+            });
+            
+            const maxTextTokens = document.getElementById('max_text_tokens_per_segment');
+            const maxTextTokensValue = document.getElementById('max_text_tokens_value');
+            maxTextTokens.addEventListener('input', function() {
+                maxTextTokensValue.textContent = this.value;
+                updateSegments(); // 更新分句
+            });
+            
+            // 初始化情绪控制开关
+            const emoToggle = document.getElementById('emo_control_toggle');
+            const emoSwitch = document.getElementById('emo_control_switch');
+            const emotionVectorGroup = document.getElementById('emotion_vector_group');
+            const switchDot = emoToggle.parentElement.querySelector('.dot');
+            const switchBg = emoToggle.parentElement.querySelector('div[class*="bg-ink"]');
+
+            // 开关默认状态：未选中（银色），面板隐藏
+            emoToggle.value = 0; // 0=默认（与音色一致），1=调整情绪
+            emotionVectorGroup.classList.add('hidden');
+
+            // 开关点击事件
+            emoSwitch.addEventListener('click', function(e) {
+                // 仅点击开关区域时触发（避免点击文字误触发）
+                if (e.target.closest('.relative') || e.target === emoToggle) {
+                    emoToggle.checked = !emoToggle.checked;
+                    const isChecked = emoToggle.checked;
+
+                    // 更新开关样式
+                    if (isChecked) {
+                        // 选中：背景边框变金色，圆点变金色并右移
+                        switchBg.classList.remove('border-silver/30');
+                        switchBg.classList.add('border-gold/60');
+                        switchDot.classList.remove('bg-silver/60');
+                        switchDot.classList.add('bg-gold');
+                        switchDot.style.transform = 'translateX(30px)';
+                        emoToggle.value = 1; // 标记为“调整情绪”
+                    } else {
+                        // 未选中：恢复银色，圆点复位
+                        switchBg.classList.remove('border-gold/60');
+                        switchBg.classList.add('border-silver/30');
+                        switchDot.classList.remove('bg-gold');
+                        switchDot.classList.add('bg-silver/60');
+                        switchDot.style.transform = 'translateX(0)';
+                        emoToggle.value = 0; // 标记为“默认”
+                    }
+
+                    // 显示/隐藏情绪向量面板
+                    emotionVectorGroup.classList.toggle('hidden', !isChecked);
+                }
+            });
+            
+            // 文本输入变化时更新分句
+            const inputText = document.getElementById('input_text');
+            inputText.addEventListener('input', debounce(updateSegments, 500));
+            
+            // 生成按钮点击事件
+            const genButton = document.getElementById('gen_button');
+            genButton.addEventListener('click', generateAudio);
+            
+
+        
+            
+            // 音色库搜索功能
+            const libraryVoiceSearch = document.getElementById('library_voice_search');
+            libraryVoiceSearch.addEventListener('input', function() {
+                filterLibraryVoices(this.value.toLowerCase());
+            });
+            // 在DOMContentLoaded事件中添加
+            document.getElementById('open_voice_library').addEventListener('click', function() {
+
+            });
+
+            document.getElementById('close_voice_library').addEventListener('click', function() {
+                document.getElementById('voice_library_modal').classList.add('hidden');
+            });
+
+            // 点击弹窗外部关闭
+            document.getElementById('voice_library_modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+
+
+        });
+        
+        // 初始化页面导航
+        function initPageNavigation() {
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 更新导航选中状态
+                    sidebarItems.forEach(navItem => {
+                        navItem.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // 显示对应的页面
+                    const pageId = this.getAttribute('data-page');
+                    document.querySelectorAll('.page-content').forEach(page => {
+                        page.classList.add('hidden');
+                    });
+                    document.getElementById(`${pageId}-page`).classList.remove('hidden');
+                    
+                    // 如果切换到音色库页面，刷新收藏列表
+                    if (pageId === 'voice-library') {
+                        renderFavoriteVoices();
+                    }
+                });
+            });
+            
+            // 初始化音色库标签页切换
+            const libraryTabs = document.querySelectorAll('.voice-library-tab');
+            
+            libraryTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 更新标签选中状态
+                    libraryTabs.forEach(t => {
+                        t.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // 显示对应的内容
+                    const tabId = this.getAttribute('data-tab');
+                    document.querySelectorAll('#voice-library-page > div[id$="-content"]').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    document.getElementById(`${tabId}-content`).classList.remove('hidden');
+                });
+            });
+        }
+
+        // 初始化音频上传功能
+        function initAudioUpload(prefix) {
+            const container = document.getElementById(`${prefix}_audio_container`);
+            const fileInput = document.getElementById(`${prefix}_audio`);
+            const uploadState = document.getElementById(`${prefix}_audio_upload_state`);
+            const previewState = document.getElementById(`${prefix}_audio_preview_state`);
+            const audioPlayer = document.getElementById(`${prefix}_audio_player`);
+            const audioName = document.getElementById(`${prefix}_audio_name`);
+            const audioDuration = document.getElementById(`${prefix}_audio_duration`);
+            const audioSize = document.getElementById(`${prefix}_audio_size`);
+            const audioWave = document.getElementById(`${prefix}_audio_wave`);
+            const removeButton = document.getElementById(`${prefix}_audio_remove`);
+            const playButton = document.getElementById(`${prefix}_audio_play_btn`);
+            const waveContainer = document.getElementById('audio_wave_container');
+            
+            // 创建波形可视化
+            function createWaveform() {
+                if (!audioWave) return;
+                
+                audioWave.innerHTML = '';
+                // 创建30个波形条
+                for (let i = 0; i < 30; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'audio-wave-bar';
+                    // 随机高度创造波形效果
+                    bar.style.height = `${Math.random() * 30 + 5}px`;
+                    // 错开动画时间
+                    bar.style.animationDelay = `${i * 0.05}s`;
+                    audioWave.appendChild(bar);
+                }
+            }
+            
+            // 处理文件上传
+            function handleFileUpload(file) {
+                if (!file) return;
+                
+                // 清除所有音色卡片的选中状态
+                document.querySelectorAll('.voice-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                
+                // 显示文件名
+                audioName.textContent = file.name;
+                
+                // 显示文件大小
+                const sizeKB = (file.size / 1024).toFixed(1);
+                audioSize.textContent = `${sizeKB} KB`;
+                
+                // 创建音频URL
+                const audioURL = URL.createObjectURL(file);
+                audioPlayer.src = audioURL;
+                
+                // 加载音频以获取时长
+                audioPlayer.onloadedmetadata = function() {
+                    const minutes = Math.floor(audioPlayer.duration / 60);
+                    const seconds = Math.floor(audioPlayer.duration % 60);
+                    audioDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                };
+                
+                // 创建波形
+                createWaveform();
+                
+                // 切换显示状态
+                uploadState.classList.add('hidden');
+                previewState.classList.remove('hidden');
+            }
+            
+            // 播放/暂停控制
+            playButton.addEventListener('click', function() {
+                if (audioPlayer.paused) {
+                    audioPlayer.play()
+                        .then(() => {
+                            // 切换按钮状态
+                            playButton.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+                            playButton.classList.add('playing');
+                            // 激活波纹动画
+                            waveContainer.classList.add('playing');
+                        })
+                        .catch(error => {
+                            console.error('播放音频失败:', error);
+                        });
+                } else {
+                    audioPlayer.pause();
+                    // 恢复按钮状态
+                    playButton.innerHTML = '<i class="fa fa-play text-xl"></i>';
+                    playButton.classList.remove('playing');
+                    // 停止波纹动画
+                    waveContainer.classList.remove('playing');
+                }
+            });    
+            
+            // 音频结束时恢复状态
+            audioPlayer.addEventListener('ended', function() {
+                playButton.innerHTML = '<i class="fa fa-play text-xl"></i>';
+                playButton.classList.remove('playing');
+                waveContainer.classList.remove('playing');
+            });        
+            
+            // 点击上传区域触发文件选择
+            uploadState.addEventListener('click', function(e) {
+                if (!e.target.closest('label')) {
+                    fileInput.click();
+                }
+            });
+            
+            // 文件选择变化
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    handleFileUpload(this.files[0]);
+                }
+            });
+            
+            // 拖放功能
+            container.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                container.classList.add('drag-over');
+            });
+            
+            container.addEventListener('dragleave', function() {
+                container.classList.remove('drag-over');
+            });
+            
+            container.addEventListener('drop', function(e) {
+                e.preventDefault();
+                container.classList.remove('drag-over');
+                
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    // 检查是否为音频文件
+                    if (e.dataTransfer.files[0].type.startsWith('audio/')) {
+                        handleFileUpload(e.dataTransfer.files[0]);
+                        // 更新隐藏的input值
+                        fileInput.files = e.dataTransfer.files;
+                    }
+                }
+            });
+            
+            // 移除音频
+            removeButton.addEventListener('click', function() {
+                // 重置文件输入
+                fileInput.value = '';
+                // 清除预设选择
+                document.querySelectorAll('.voice-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                document.getElementById('prompt_audio_example').value = '';
+                
+                // 释放音频URL
+                if (audioPlayer.src) {
+                    URL.revokeObjectURL(audioPlayer.src);
+                    audioPlayer.src = '';
+                }
+                
+                // 切换显示状态
+                previewState.classList.add('hidden');
+                uploadState.classList.remove('hidden');
+                playButton.innerHTML = '<i class="fa fa-play text-xl"></i>';
+                playButton.classList.remove('playing');
+                waveContainer.classList.remove('playing');
+            });
+            
+            // 播放时波形动画
+            audioPlayer.addEventListener('play', function() {
+                const bars = audioWave.querySelectorAll('.audio-wave-bar');
+                bars.forEach(bar => {
+                    bar.style.animationPlayState = 'running';
+                });
+            });
+            
+            // 暂停时波形动画
+            audioPlayer.addEventListener('pause', function() {
+                const bars = audioWave.querySelectorAll('.audio-wave-bar');
+                bars.forEach(bar => {
+                    bar.style.animationPlayState = 'paused';
+                });
+            });
+        }
+        
+        // 选择预设音色 - 核心功能实现
+        function selectPresetVoice(voicePath, voiceName) {
+            // 获取DOM元素
+            const uploadState = document.getElementById('prompt_audio_upload_state');
+            const previewState = document.getElementById('prompt_audio_preview_state');
+            const audioName = document.getElementById('prompt_audio_name');
+            const audioPlayer = document.getElementById('prompt_audio_player');
+            const audioDuration = document.getElementById('prompt_audio_duration');
+            const audioSize = document.getElementById('prompt_audio_size');
+            const audioWave = document.getElementById('prompt_audio_wave');
+            const promptAudioExample = document.getElementById('prompt_audio_example');
+            const fileInput = document.getElementById('prompt_audio');
+            
+            // 重置文件输入
+            fileInput.value = '';
+            
+            // 设置示例音频路径
+            promptAudioExample.value = voicePath;
+            
+            // 更新显示的文件名（使用音色名称而非文件名）
+            audioName.textContent = voiceName;
+            
+            // 设置音频源
+            audioPlayer.src = voicePath;
+            
+            // 创建波形（核心显示）
+            createWaveform('prompt');
+            
+            // 切换显示状态（在prompt_audio_container中显示）
+            uploadState.classList.add('hidden');
+            previewState.classList.remove('hidden');
+            
+            // 加载音频以获取时长和大小
+            audioPlayer.onloadedmetadata = function() {
+                // 计算并显示时长
+                const minutes = Math.floor(audioPlayer.duration / 60);
+                const seconds = Math.floor(audioPlayer.duration % 60);
+                audioDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // 获取并显示文件大小
+                fetch(voicePath, { method: 'HEAD' })
+                    .then(response => {
+                        const fileSize = response.headers.get('Content-Length');
+                        if (fileSize) {
+                            const sizeKB = (parseInt(fileSize) / 1024).toFixed(1);
+                            audioSize.textContent = `${sizeKB} KB`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取文件大小失败:', error);
+                        audioSize.textContent = '未知大小';
+                    });
+            };
+            
+            // 处理音频加载错误
+            audioPlayer.onerror = function() {
+                console.error('音频加载失败');
+                audioDuration.textContent = '加载失败';
+                audioSize.textContent = '加载失败';
+                // 显示错误提示
+                alert('所选音色无法加载，请尝试其他选项');
+            };
+        }
+        
+        // 创建波形图的独立函数
+        function createWaveform(prefix) {
+            const audioWave = document.getElementById(`${prefix}_audio_wave`);
+            if (!audioWave) return;
+            
+            audioWave.innerHTML = '';
+            // 创建30个波形条
+            for (let i = 0; i < 30; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'audio-wave-bar';
+                // 随机高度创造波形效果
+                bar.style.height = `${Math.random() * 30 + 5}px`;
+                // 错开动画时间
+                bar.style.animationDelay = `${i * 0.05}s`;
+                audioWave.appendChild(bar);
+            }
+        }
+        
+        // 更新分句结果
+        function updateSegments() {
+            const text = document.getElementById('input_text').value;
+            const maxTokens = document.getElementById('max_text_tokens_per_segment').value;
+            const tableBody = document.getElementById('segments_table_body');
+            
+            if (!text.trim()) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-4 px-3 text-center text-sm text-silver/60">输入铭文后显分句之果</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // 模拟调用后端API进行文本分句
+            setTimeout(() => {
+                // 简单的分句逻辑（实际项目中应由API返回）
+                const segments = [];
+                const words = text.split(/[，。,;.、？！\s]+/).filter(word => word.trim());
+                
+                let currentSegment = '';
+                let currentTokens = 0;
+                let index = 0;
+                
+                words.forEach(word => {
+                    const wordTokens = Math.ceil(word.length / 2); // 简单估算token数
+                    
+                    if (currentTokens + wordTokens > maxTokens) {
+                        // 当前段落已满，添加到结果
+                        if (currentSegment) {
+                            segments.push({
+                                index,
+                                text: currentSegment,
+                                tokens: currentTokens
+                            });
+                            index++;
+                        }
+                        // 开始新段落
+                        currentSegment = word;
+                        currentTokens = wordTokens;
+                    } else {
+                        // 添加到当前段落
+                        currentSegment += (currentSegment ? '，' : '') + word;
+                        currentTokens += wordTokens;
+                    }
+                });
+                
+                // 添加最后一个段落
+                if (currentSegment) {
+                    segments.push({
+                        index,
+                        text: currentSegment,
+                        tokens: currentTokens
+                    });
+                }
+                
+                if (segments.length > 0) {
+                    let html = '';
+                    segments.forEach(segment => {
+                        html += `
+                            <tr>
+                                <td class="py-2 px-3 text-sm border-b border-gold/10">${segment.index + 1}</td>
+                                <td class="py-2 px-3 text-sm border-b border-gold/10">${segment.text}</td>
+                                <td class="py-2 px-3 text-sm border-b border-gold/10">${segment.tokens}</td>
+                            </tr>
+                        `;
+                    });
+                    tableBody.innerHTML = html;
+                } else {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="py-4 px-3 text-center text-sm text-silver/60">无法解析文本，请检查输入</td>
+                        </tr>
+                    `;
+                }
+            }, 300);
+        }
+        
+        // 生成音频
+        function generateAudio() {
+            const text = document.getElementById('input_text').value;
+            if (!text.trim()) {
+                alert('请铸刻目标铭文');
+                return;
+            }
+
+            // 检查是否选择了音色
+            const promptAudioExample = document.getElementById('prompt_audio_example').value;
+            const promptAudio = document.getElementById('prompt_audio');
+            if (!promptAudioExample && (!promptAudio.files || promptAudio.files.length === 0)) {
+                alert('请先选择或上传音色之范');
+                return;
+            }
+
+            // 获取情绪控制方式（0=默认，1=调整情绪）
+            const emoControlMethod = document.getElementById('emo_control_toggle').value;
+
+            // 显示生成状态
+            document.getElementById('output_container').classList.add('hidden');
+            document.getElementById('generation_status').classList.remove('hidden');
+
+            // 创建表单数据
+            const formData = new FormData();
+            formData.append('text', text);
+            formData.append('emo_control_method', emoControlMethod);
+            
+            // 添加情感向量（如果启用）
+            if (emoControlMethod == 1) {
+                formData.append('vec1', document.getElementById('vec1').value);
+                formData.append('vec2', document.getElementById('vec2').value);
+                formData.append('vec3', document.getElementById('vec3').value);
+                formData.append('vec4', document.getElementById('vec4').value);
+                formData.append('vec5', document.getElementById('vec5').value);
+                formData.append('vec6', document.getElementById('vec6').value);
+                formData.append('vec7', document.getElementById('vec7').value);
+                formData.append('vec8', document.getElementById('vec8').value);
+            }
+            
+            // 添加高级参数
+            formData.append('max_text_tokens_per_segment', document.getElementById('max_text_tokens_per_segment').value);
+            formData.append('do_sample', document.getElementById('do_sample').checked ? 'true' : 'false');
+            formData.append('top_p', document.getElementById('top_p').value);
+            formData.append('top_k', document.getElementById('top_k').value);
+            formData.append('temperature', document.getElementById('temperature').value);
+            formData.append('length_penalty', document.getElementById('length_penalty').value);
+            formData.append('num_beams', document.getElementById('num_beams').value);
+            formData.append('repetition_penalty', document.getElementById('repetition_penalty').value);
+            formData.append('max_mel_tokens', document.getElementById('max_mel_tokens').value);
+            
+            // 添加音频数据
+            if (promptAudioExample) {
+                formData.append('prompt_audio_example', promptAudioExample);
+            } else if (promptAudio.files && promptAudio.files.length > 0) {
+                formData.append('prompt_audio', promptAudio.files[0]);
+            }
+
+            // 调用后端API生成音频
+            fetch('/generate', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('生成音频失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // 隐藏生成状态
+                document.getElementById('generation_status').classList.add('hidden');
+                
+                if (data.status === 'success' && data.audio_path) {
+                        // 保存到历史记录
+
+                    // 显示生成结果
+                    const audioElement = document.getElementById('output_audio');
+                    const customPlayer = document.getElementById('custom_audio_player');
+                    const playBtn = document.getElementById('custom_play_btn');
+                    const progressBar = document.getElementById('progress_bar');
+                    const timeDisplay = document.getElementById('time_display');
+                    const volumeBtn = document.getElementById('volume_btn');
+                    const downloadBtn = document.getElementById('download_btn');
+                    const speedBtn = document.getElementById('speed_btn');
+
+                    audioElement.src = data.audio_path;
+                    customPlayer.classList.remove('hidden');
+                    playBtn.addEventListener('click', () => {
+                    if (audioElement.paused) {
+                        audioElement.play();
+                        playBtn.innerHTML = '<i class="fa fa-pause"></i>';
+                    } else {
+                        audioElement.pause();
+                        playBtn.innerHTML = '<i class="fa fa-play"></i>';
+                    }
+                    });
+                    generateAudioWaveform(audioElement, 'output_audio_waveform');
+                    // 进度更新
+                    audioElement.addEventListener('timeupdate', () => {
+                        const percent = (audioElement.currentTime / audioElement.duration) * 100;
+                        progressBar.style.width = `${percent}%`;
+                        
+                        // 更新时间显示
+                        const currentMinutes = Math.floor(audioElement.currentTime / 60);
+                        const currentSeconds = Math.floor(audioElement.currentTime % 60);
+                        const totalMinutes = Math.floor(audioElement.duration / 60);
+                        const totalSeconds = Math.floor(audioElement.duration % 60);
+                        
+                        timeDisplay.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+                    });
+
+                    // 点击进度条跳转
+                    progressBar.parentElement.addEventListener('click', (e) => {
+                        const rect = progressBar.parentElement.getBoundingClientRect();
+                        const pos = (e.clientX - rect.left) / rect.width;
+                        audioElement.currentTime = pos * audioElement.duration;
+                    });
+
+
+                    // 播放结束时重置
+                    audioElement.addEventListener('ended', () => {
+                        playBtn.innerHTML = '<i class="fa fa-play"></i>';
+                        progressBar.style.width = '0%';
+                    });
+
+                    document.getElementById('output_container').classList.remove('hidden');
+                    const text = document.getElementById('input_text').value;
+                    const voiceName = document.getElementById('prompt_audio_name').textContent;
+                    saveToHistory(text, data.audio_path, voiceName);
+                } else {
+                    throw new Error(data.message || '生成音频失败');
+                }
+                // 在生成音频成功后添加波形生成
+                
+
+
+                // 添加语速控制逻辑
+                document.getElementById('speed_control').addEventListener('input', function() {
+                    const speed = parseFloat(this.value);
+                    const audioElement = document.getElementById('output_audio');
+                    audioElement.playbackRate = speed;
+                    document.getElementById('speed_value').textContent = `${speed}x`;
+                });
+
+                // 修改下载按钮逻辑，考虑语速
+                document.getElementById('download_btn').addEventListener('click', function() {
+                    const audioElement = document.getElementById('output_audio');
+                    const speed = parseFloat(document.getElementById('speed_control').value);
+                    
+                    // 这里需要后端支持按语速下载，前端只能传递参数
+                    const downloadUrl = `${audioElement.src}?speed=${speed}`;
+                    
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `generated_audio_${new Date().getTime()}_${speed}x.mp3`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+                
+            })
+            .catch(error => {
+                console.error('生成音频错误:', error);
+                document.getElementById('generation_status').classList.add('hidden');
+                document.getElementById('output_container').classList.remove('hidden');
+                document.getElementById('output_container').innerHTML = `
+                    <p class="text-red-400 text-sm">生成失败: ${error.message}</p>
+                    <button id="retry_generation" class="mt-2 px-3 py-1 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-xs transition-colors">
+                        <i class="fa fa-refresh mr-1"></i>重试
+                    </button>
+                `;
+                // 添加重试按钮事件
+                document.getElementById('retry_generation').addEventListener('click', generateAudio);
+            });
+        }
+            
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+// 加载预设音色（从后端API获取）
+
+// 初始化音色库
+function initVoiceLibrary() {
+    // 加载所有音色
+    loadLibraryVoices();
+    
+    // 初始化收藏功能
+    setupFavoriteButtonEvents();
+    
+    // 初始化音色库标签页切换
+    const libraryTabs = document.querySelectorAll('.voice-library-tab');
+    libraryTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            if (tabId === 'favorite-voices') {
+                renderFavoriteVoices();
+            }
+        });
+    });
+    
+    // 收藏音色搜索功能
+    const favoriteVoiceSearch = document.getElementById('favorite_voice_search');
+    favoriteVoiceSearch.addEventListener('input', function() {
+        filterFavoriteVoices(this.value.toLowerCase());
+    });
+}
+
+// 从API加载音色库
+function loadLibraryVoices() {
+    // 显示加载状态
+    const loading = document.getElementById('library_voices_loading');
+    const container = document.getElementById('library_voices_container');
+    const error = document.getElementById('library_voices_error');
+    const retryBtn = document.getElementById('library_retry_voices');
+    
+    loading.classList.remove('hidden');
+    container.classList.add('hidden');
+    error.classList.add('hidden');
+    retryBtn.classList.add('hidden');
+    
+    // 加载所有分类用于筛选
+    fetch('/api/categories')
+        .then(response => {
+            if (!response.ok) throw new Error('获取分类失败');
+            return response.json();
+        })
+        .then(categories => {
+            // 渲染分类筛选器
+            renderDynamicFilters(categories);
+            
+            // 加载所有音色
+            return fetch('/api/voices?category=all');
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('获取音色失败');
+            return response.json();
+        })
+        .then(voices => {
+            // 隐藏加载状态，显示音色列表
+            loading.classList.add('hidden');
+            container.classList.remove('hidden');
+            
+            // 存储所有音色
+            voicesByCategory['all'] = voices;
+            
+            // 按分类组织音色
+            voices.forEach(voice => {
+                if (!voicesByCategory[voice.category_id]) {
+                    voicesByCategory[voice.category_id] = [];
+                }
+                voicesByCategory[voice.category_id].push(voice);
+            });
+            
+            // 渲染音色列表
+            renderLibraryVoices(voices);
+            
+            // 初始化收藏状态
+            updateFavoriteStatuses();
+        })
+        .catch(error => {
+            console.error('加载音色库失败:', error);
+            loading.classList.add('hidden');
+            error.classList.remove('hidden');
+            retryBtn.classList.remove('hidden');
+        });
+}
+
+// 渲染动态分类筛选器
+function renderDynamicFilters(categories) {
+    const container = document.getElementById('dynamic-filters-container');
+    container.innerHTML = ''; // 清空加载状态
+    
+    // 创建分类筛选下拉框
+    const filterSelect = document.createElement('select');
+    filterSelect.id = 'category_filter';
+    filterSelect.className = 'bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none';
+    
+    // 添加默认选项
+    const defaultOption = document.createElement('option');
+    defaultOption.value = 'all';
+    defaultOption.textContent = '所有分类';
+    filterSelect.appendChild(defaultOption);
+    
+    // 添加各分类选项
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        filterSelect.appendChild(option);
+    });
+    
+    // 添加筛选事件
+    filterSelect.addEventListener('change', function() {
+        const categoryId = this.value;
+        const searchTerm = document.getElementById('library_voice_search').value.toLowerCase();
+        
+        let filteredVoices = [];
+        if (categoryId === 'all') {
+            filteredVoices = voicesByCategory['all'] || [];
+        } else {
+            filteredVoices = voicesByCategory[categoryId] || [];
+        }
+        
+        // 应用搜索过滤
+        if (searchTerm) {
+            filteredVoices = filteredVoices.filter(voice => 
+                voice.name.toLowerCase().includes(searchTerm) || 
+                voice.description.toLowerCase().includes(searchTerm) ||
+                voice.category_name.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        renderLibraryVoices(filteredVoices);
+    });
+    
+    container.appendChild(filterSelect);
+}
+
+// 渲染音色库列表
+function renderLibraryVoices(voices) {
+    const container = document.getElementById('library_voices_container');
+    container.innerHTML = '';
+    
+    if (voices.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 bg-ink rounded-lg border border-gold/10">
+                <p class="text-silver/60">未找到匹配的音色</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // 创建音色列表
+    voices.forEach(voice => {
+        const isFavorite = favoriteVoices.some(v => v.id === voice.id);
+        
+        const voiceCard = document.createElement('div');
+        voiceCard.className = 'voice-card bg-ink rounded-lg border border-gold/10 p-4 flex items-center justify-between';
+        voiceCard.setAttribute('data-voice-id', voice.id);
+        
+        // 格式化文件大小
+        const fileSizeKB = (voice.file_size / 1024).toFixed(1);
+        const fileSize = fileSizeKB > 1024 
+            ? `${(fileSizeKB / 1024).toFixed(1)} MB` 
+            : `${fileSizeKB} KB`;
+        
+        // 格式化时长
+        const minutes = Math.floor(voice.duration / 60);
+        const seconds = Math.floor(voice.duration % 60);
+        const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        voiceCard.innerHTML = `
+            <div class="flex items-center space-x-4 flex-1">
+                <div class="relative w-12 h-12">
+                    <button class="play-btn absolute inset-0 rounded-full bg-ink-light flex items-center justify-center"
+                            data-voice-id="${voice.id}">
+                        <i class="fa fa-play text-gold"></i>
+                        <!-- 波动动效元素 -->
+                        <span class="play-animation absolute inset-0 rounded-full bg-gold/30"></span>
+                    </button>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gold-light">${voice.name}</h4>
+                    <div class="flex items-center text-xs text-silver/60 mt-1">
+                        <span class="mr-3">${voice.category_name}</span>
+
+                    </div>
+                    ${voice.description ? `<p class="text-sm text-silver/70 mt-2">${voice.description}</p>` : ''}
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="select-voice-btn metal-btn px-3 py-1 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors" 
+                        data-voice-id="${voice.id}" 
+                        data-voice-name="${voice.name}" 
+                        data-voice-path="${voice.audio_path}">
+                    <i class="fa fa-check mr-1"></i>选择
+                </button>
+                <button class="favorite-btn ${isFavorite ? 'favorited' : ''} text-silver hover:text-gold" 
+                        data-voice-id="${voice.id}">
+                    <i class="fa ${isFavorite ? 'fa-heart' : 'fa-heart-o'}"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(voiceCard);
+    });
+    
+    // 为新添加的元素绑定事件
+    setupVoiceCardEvents();
+    setupPlayButtons();
+}
+
+// 渲染收藏的音色
+function renderFavoriteVoices() {
+    const container = document.getElementById('favorite_voices_container');
+    const noFavoritesMsg = document.getElementById('no_favorites_message');
+    
+    if (favoriteVoices.length === 0) {
+        container.classList.add('hidden');
+        noFavoritesMsg.classList.remove('hidden');
+        return;
+    }
+    
+    container.classList.remove('hidden');
+    noFavoritesMsg.classList.add('hidden');
+    container.innerHTML = '';
+    
+    favoriteVoices.forEach(voice => {
+        const voiceCard = document.createElement('div');
+        voiceCard.className = 'voice-card bg-ink rounded-lg border border-gold/10 p-4 flex items-center justify-between';
+        voiceCard.setAttribute('data-voice-id', voice.id);
+        
+        // 格式化文件大小
+        const fileSizeKB = (voice.file_size / 1024).toFixed(1);
+        const fileSize = fileSizeKB > 1024 
+            ? `${(fileSizeKB / 1024).toFixed(1)} MB` 
+            : `${fileSizeKB} KB`;
+        
+        // 格式化时长
+        const minutes = Math.floor(voice.duration / 60);
+        const seconds = Math.floor(voice.duration % 60);
+        const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        voiceCard.innerHTML = `
+            <div class="flex items-center space-x-4 flex-1">
+                <div class="relative w-12 h-12">
+                    <button class="play-btn absolute inset-0 rounded-full bg-ink-light flex items-center justify-center"
+                            data-voice-id="${voice.id}">
+                        <i class="fa fa-play text-gold"></i>
+                        <!-- 波动动效元素 -->
+                        <span class="play-animation absolute inset-0 rounded-full bg-gold/30"></span>
+                    </button>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gold-light">${voice.name}</h4>
+                    <div class="flex items-center text-xs text-silver/60 mt-1">
+                        <span class="mr-3">${voice.category_name}</span>
+
+                    </div>
+                    ${voice.description ? `<p class="text-sm text-silver/70 mt-2">${voice.description}</p>` : ''}
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="select-voice-btn metal-btn px-3 py-1 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors" 
+                        data-voice-id="${voice.id}" 
+                        data-voice-name="${voice.name}" 
+                        data-voice-path="${voice.audio_path}">
+                    <i class="fa fa-check mr-1"></i>选择
+                </button>
+                <button class="favorite-btn favorited text-gold" 
+                        data-voice-id="${voice.id}">
+                    <i class="fa fa-heart"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(voiceCard);
+    });
+    
+    // 为新添加的元素绑定事件
+    setupVoiceCardEvents();
+    setupPlayButtons();
+}
+
+// 设置音色卡片事件
+function setupVoiceCardEvents() {
+    // 选择音色按钮事件
+    document.querySelectorAll('.select-voice-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const voiceId = this.getAttribute('data-voice-id');
+            const voiceName = this.getAttribute('data-voice-name');
+            const voicePath = this.getAttribute('data-voice-path');
+            
+            // 选择该音色
+            selectPresetVoice(voicePath, voiceName);
+            
+            // 切换到首页
+            document.querySelector('.sidebar-item[data-page="home"]').click();
+        });
+    });
+    
+    // 收藏按钮事件（动态绑定，避免重复绑定）
+    document.querySelectorAll('.favorite-btn:not([data-event-bound])').forEach(btn => {
+        btn.setAttribute('data-event-bound', 'true');
+        btn.addEventListener('click', function() {
+            const voiceId = this.getAttribute('data-voice-id');
+            toggleFavorite(voiceId);
+        });
+    });
+}
+
+// 设置收藏按钮事件委托
+function setupFavoriteButtonEvents() {
+    // 音色库重试按钮
+    document.getElementById('library_retry_voices').addEventListener('click', loadLibraryVoices);
+}
+
+// 切换音色收藏状态
+function toggleFavorite(voiceId) {
+    // 查找该音色
+    const allVoices = voicesByCategory['all'] || [];
+    const voice = allVoices.find(v => v.id == voiceId);
+    
+    if (!voice) return;
+    
+    // 检查是否已收藏
+    const index = favoriteVoices.findIndex(v => v.id == voiceId);
+    
+    if (index > -1) {
+        // 取消收藏
+        favoriteVoices.splice(index, 1);
+    } else {
+        // 添加收藏
+        favoriteVoices.push(voice);
+    }
+    
+    // 保存到本地存储
+    localStorage.setItem('favoriteVoices', JSON.stringify(favoriteVoices));
+    
+    // 更新UI
+    updateFavoriteStatuses();
+    
+    // 如果当前在收藏标签页，重新渲染
+    const activeTab = document.querySelector('.voice-library-tab.active');
+    if (activeTab && activeTab.getAttribute('data-tab') === 'favorite-voices') {
+        renderFavoriteVoices();
+    }
+}
+
+// 更新所有收藏状态UI
+function updateFavoriteStatuses() {
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+        const voiceId = btn.getAttribute('data-voice-id');
+        const isFavorite = favoriteVoices.some(v => v.id == voiceId);
+        
+        if (isFavorite) {
+            btn.classList.add('favorited');
+            btn.innerHTML = '<i class="fa fa-heart"></i>';
+        } else {
+            btn.classList.remove('favorited');
+            btn.innerHTML = '<i class="fa fa-heart-o"></i>';
+        }
+    });
+}
+
+// 过滤音色库
+function filterLibraryVoices(searchTerm) {
+    const categoryId = document.getElementById('category_filter').value;
+    
+    let filteredVoices = [];
+    if (categoryId === 'all') {
+        filteredVoices = voicesByCategory['all'] || [];
+    } else {
+        filteredVoices = voicesByCategory[categoryId] || [];
+    }
+    
+    if (searchTerm) {
+        filteredVoices = filteredVoices.filter(voice => 
+            voice.name.toLowerCase().includes(searchTerm) || 
+            voice.description.toLowerCase().includes(searchTerm) ||
+            voice.category_name.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    renderLibraryVoices(filteredVoices);
+}
+
+// 过滤收藏的音色
+function filterFavoriteVoices(searchTerm) {
+    if (!searchTerm) {
+        renderFavoriteVoices();
+        return;
+    }
+    
+    const filtered = favoriteVoices.filter(voice => 
+        voice.name.toLowerCase().includes(searchTerm) || 
+        voice.description.toLowerCase().includes(searchTerm) ||
+        voice.category_name.toLowerCase().includes(searchTerm)
+    );
+    
+    const container = document.getElementById('favorite_voices_container');
+    container.innerHTML = '';
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 bg-ink rounded-lg border border-gold/10">
+                <p class="text-silver/60">未找到匹配的收藏音色</p>
+            </div>
+        `;
+        return;
+    }
+    
+    filtered.forEach(voice => {
+        const voiceCard = document.createElement('div');
+        voiceCard.className = 'voice-card bg-ink rounded-lg border border-gold/10 p-4 flex items-center justify-between';
+        voiceCard.setAttribute('data-voice-id', voice.id);
+        
+        // 格式化文件大小
+        const fileSizeKB = (voice.file_size / 1024).toFixed(1);
+        const fileSize = fileSizeKB > 1024 
+            ? `${(fileSizeKB / 1024).toFixed(1)} MB` 
+            : `${fileSizeKB} KB`;
+        
+        // 格式化时长
+        const minutes = Math.floor(voice.duration / 60);
+        const seconds = Math.floor(voice.duration % 60);
+        const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        voiceCard.innerHTML = `
+            <div class="flex items-center space-x-4 flex-1">
+                <div class="w-12 h-12 rounded-full bg-ink-light flex items-center justify-center">
+                    <i class="fa fa-volume-up text-gold"></i>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gold-light">${voice.name}</h4>
+                    <div class="flex items-center text-xs text-silver/60 mt-1">
+                        <span class="mr-3">${voice.category_name}</span>
+                        <span class="mr-3">${duration}</span>
+                        <span>${fileSize}</span>
+                    </div>
+                    ${voice.description ? `<p class="text-sm text-silver/70 mt-2">${voice.description}</p>` : ''}
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="select-voice-btn metal-btn px-3 py-1 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors" 
+                        data-voice-id="${voice.id}" 
+                        data-voice-name="${voice.name}" 
+                        data-voice-path="${voice.audio_path}">
+                    <i class="fa fa-check mr-1"></i>选择
+                </button>
+                <button class="favorite-btn favorited text-gold" 
+                        data-voice-id="${voice.id}">
+                    <i class="fa fa-heart"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(voiceCard);
+    });
+    
+    setupVoiceCardEvents();
+}
+
+// 在音色卡生成后添加播放按钮事件监听
+function setupPlayButtons() {
+    // 存储当前正在播放的音频实例
+    let currentAudio = null;
+    let currentPlayButton = null;
+
+    // 为所有播放按钮添加点击事件
+    document.querySelectorAll('.play-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const voiceCard = this.closest('.voice-card');
+            const audioPath = voiceCard.querySelector('.select-voice-btn').getAttribute('data-voice-path');
+
+            // 如果点击的是新的播放按钮，先停止当前播放的音频
+            if (currentPlayButton && currentPlayButton !== this) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentPlayButton.classList.remove('playing');
+                currentPlayButton.querySelector('i').className = 'fa fa-play text-gold';
+                
+                // 清除当前播放实例
+                currentAudio = null;
+                currentPlayButton = null;
+            }
+
+            // 检查是否是当前正在播放的按钮
+            if (currentPlayButton === this) {
+                // 暂停播放
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                this.classList.remove('playing');
+                this.querySelector('i').className = 'fa fa-play text-gold';
+                currentAudio = null;
+                currentPlayButton = null;
+            } else {
+                // 开始播放新的音频
+                try {
+                    // 确保先清除可能存在的音频实例
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+                    
+                    // 创建新的音频实例
+                    currentAudio = new Audio(audioPath);
+                    currentPlayButton = this;
+                    
+                    // 播放音频
+                    await currentAudio.play();
+                    
+                    // 更新按钮状态和图标
+                    this.classList.add('playing');
+                    this.querySelector('i').className = 'fa fa-pause text-gold';
+                    
+                    // 音频播放结束时重置状态
+                    currentAudio.onended = () => {
+                        this.classList.remove('playing');
+                        this.querySelector('i').className = 'fa fa-play text-gold';
+                        currentAudio.currentTime = 0;
+                        currentAudio = null;
+                        currentPlayButton = null;
+                    };
+                } catch (error) {
+                    console.error('播放音频失败:', error);
+                    alert('无法播放音频，请稍后再试');
+                    // 出错时重置状态
+                    currentAudio = null;
+                    currentPlayButton = null;
+                    this.classList.remove('playing');
+                    this.querySelector('i').className = 'fa fa-play text-gold';
+                }
+            }
+        });
+    });
+}
+      
+function initModalVoiceLibrary() {
+    // 打开音色库弹窗
+    document.getElementById('open_voice_library').addEventListener('click', function() {
+        document.getElementById('voice_library_modal').classList.remove('hidden');
+        loadModalLibraryVoices();
+    });
+
+    // 关闭音色库弹窗
+    document.getElementById('close_voice_library').addEventListener('click', function() {
+        document.getElementById('voice_library_modal').classList.add('hidden');
+    });
+
+    // 点击弹窗外部关闭
+    document.getElementById('voice_library_modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
+
+    // 初始化弹窗标签页切换
+    const modalTabs = document.querySelectorAll('.modal-voice-tab');
+    modalTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // 更新标签选中状态
+            modalTabs.forEach(t => {
+                t.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            // 显示对应的内容
+            const tabId = this.getAttribute('data-tab');
+            document.querySelectorAll('#voice_library_modal [id$="-content"]').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${tabId}-content`).classList.remove('hidden');
+            
+            // 如果切换到收藏标签页，刷新收藏列表
+            if (tabId === 'modal-favorite-voices') {
+                renderModalFavoriteVoices();
+            }
+        });
+    });
+
+    // 弹窗搜索功能
+    const modalVoiceSearch = document.getElementById('modal_voice_search');
+    modalVoiceSearch.addEventListener('input', function() {
+        filterModalLibraryVoices(this.value.toLowerCase());
+    });
+
+    // 弹窗收藏搜索功能
+    const modalFavoriteVoiceSearch = document.getElementById('modal_favorite_voice_search');
+    modalFavoriteVoiceSearch.addEventListener('input', function() {
+        filterModalFavoriteVoices(this.value.toLowerCase());
+    });
+
+    // 弹窗重试按钮
+    document.getElementById('modal_retry_voices').addEventListener('click', loadModalLibraryVoices);
+}
+
+// 从API加载弹窗中的音色库
+function loadModalLibraryVoices() {
+    // 显示加载状态
+    const loading = document.getElementById('modal_voices_loading');
+    const container = document.getElementById('modal_voices_container');
+    const error = document.getElementById('modal_voices_error');
+    const retryBtn = document.getElementById('modal_retry_voices');
+    
+    loading.classList.remove('hidden');
+    container.classList.add('hidden');
+    error.classList.add('hidden');
+    retryBtn.classList.add('hidden');
+    
+    // 先尝试使用已加载的数据
+    if (voicesByCategory['all'] && voicesByCategory['all'].length > 0) {
+        // 已经有数据，直接渲染
+        loading.classList.add('hidden');
+        container.classList.remove('hidden');
+        renderModalLibraryVoices(voicesByCategory['all']);
+        updateModalFavoriteStatuses();
+        return;
+    }
+    
+    // 加载所有分类用于筛选
+    fetch('/api/categories')
+        .then(response => {
+            if (!response.ok) throw new Error('获取分类失败');
+            return response.json();
+        })
+        .then(categories => {
+            // 渲染弹窗分类筛选器
+            renderModalDynamicFilters(categories);
+            
+            // 加载所有音色
+            return fetch('/api/voices?category=all');
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('获取音色失败');
+            return response.json();
+        })
+        .then(voices => {
+            // 隐藏加载状态，显示音色列表
+            loading.classList.add('hidden');
+            container.classList.remove('hidden');
+            
+            // 存储所有音色
+            voicesByCategory['all'] = voices;
+            
+            // 按分类组织音色
+            voices.forEach(voice => {
+                if (!voicesByCategory[voice.category_id]) {
+                    voicesByCategory[voice.category_id] = [];
+                }
+                voicesByCategory[voice.category_id].push(voice);
+            });
+            
+            // 渲染弹窗音色列表
+            renderModalLibraryVoices(voices);
+            
+            // 初始化收藏状态
+            updateModalFavoriteStatuses();
+        })
+        .catch(error => {
+            console.error('加载弹窗音色库失败:', error);
+            loading.classList.add('hidden');
+            error.classList.remove('hidden');
+            retryBtn.classList.remove('hidden');
+        });
+}
+
+// 渲染弹窗动态分类筛选器
+function renderModalDynamicFilters(categories) {
+    const container = document.getElementById('modal_dynamic-filters-container');
+    container.innerHTML = '';
+    
+    // 创建分类筛选下拉框
+    const filterSelect = document.createElement('select');
+    filterSelect.id = 'modal_category_filter';
+    filterSelect.className = 'bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none';
+    
+    // 添加默认选项
+    const defaultOption = document.createElement('option');
+    defaultOption.value = 'all';
+    defaultOption.textContent = '所有分类';
+    filterSelect.appendChild(defaultOption);
+    
+    // 添加各分类选项
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        filterSelect.appendChild(option);
+    });
+    
+    // 添加筛选事件
+    filterSelect.addEventListener('change', function() {
+        const categoryId = this.value;
+        const searchTerm = document.getElementById('modal_voice_search').value.toLowerCase();
+        
+        let filteredVoices = [];
+        if (categoryId === 'all') {
+            filteredVoices = voicesByCategory['all'] || [];
+        } else {
+            filteredVoices = voicesByCategory[categoryId] || [];
+        }
+        
+        // 应用搜索过滤
+        if (searchTerm) {
+            filteredVoices = filteredVoices.filter(voice => 
+                voice.name.toLowerCase().includes(searchTerm) || 
+                voice.description.toLowerCase().includes(searchTerm) ||
+                voice.category_name.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        renderModalLibraryVoices(filteredVoices);
+    });
+    
+    container.appendChild(filterSelect);
+}
+
+// 渲染弹窗音色库列表
+function renderModalLibraryVoices(voices) {
+    const container = document.getElementById('modal_voices_container');
+    container.innerHTML = '';
+    
+    if (voices.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 bg-ink rounded-lg border border-gold/10">
+                <p class="text-silver/60">未找到匹配的音色</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // 创建音色列表
+    voices.forEach(voice => {
+        const isFavorite = favoriteVoices.some(v => v.id === voice.id);
+        
+        const voiceCard = document.createElement('div');
+        voiceCard.className = 'voice-card bg-ink rounded-lg border border-gold/10 p-4 flex items-center justify-between';
+        voiceCard.setAttribute('data-voice-id', voice.id);
+        
+        // 格式化文件大小
+        const fileSizeKB = (voice.file_size / 1024).toFixed(1);
+        const fileSize = fileSizeKB > 1024 
+            ? `${(fileSizeKB / 1024).toFixed(1)} MB` 
+            : `${fileSizeKB} KB`;
+        
+        // 格式化时长
+        const minutes = Math.floor(voice.duration / 60);
+        const seconds = Math.floor(voice.duration % 60);
+        const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        voiceCard.innerHTML = `
+            <div class="flex items-center space-x-4 flex-1">
+                <div class="relative w-12 h-12">
+                    <button class="play-btn absolute inset-0 rounded-full bg-ink-light flex items-center justify-center"
+                            data-voice-id="${voice.id}">
+                        <i class="fa fa-play text-gold"></i>
+                        <!-- 波动动效元素 -->
+                        <span class="play-animation absolute inset-0 rounded-full bg-gold/30"></span>
+                    </button>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gold-light">${voice.name}</h4>
+                    <div class="flex items-center text-xs text-silver/60 mt-1">
+                        <span class="mr-3">${voice.category_name}</span>
+                    </div>
+                    ${voice.description ? `<p class="text-sm text-silver/70 mt-2">${voice.description}</p>` : ''}
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="select-voice-btn metal-btn px-3 py-1 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors" 
+                        data-voice-id="${voice.id}" 
+                        data-voice-name="${voice.name}" 
+                        data-voice-path="${voice.audio_path}">
+                    <i class="fa fa-check mr-1"></i>选择
+                </button>
+                <button class="favorite-btn ${isFavorite ? 'favorited' : ''} text-silver hover:text-gold" 
+                        data-voice-id="${voice.id}">
+                    <i class="fa ${isFavorite ? 'fa-heart' : 'fa-heart-o'}"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(voiceCard);
+    });
+    
+    // 为新添加的元素绑定事件
+    setupModalVoiceCardEvents();
+    setupModalPlayButtons();
+}
+
+// 渲染弹窗中收藏的音色
+function renderModalFavoriteVoices() {
+    const container = document.getElementById('modal_favorite_voices_container');
+    const noFavoritesMsg = document.getElementById('modal_no_favorites_message');
+    
+    if (favoriteVoices.length === 0) {
+        container.classList.add('hidden');
+        noFavoritesMsg.classList.remove('hidden');
+        return;
+    }
+    
+    container.classList.remove('hidden');
+    noFavoritesMsg.classList.add('hidden');
+    container.innerHTML = '';
+    
+    favoriteVoices.forEach(voice => {
+        const voiceCard = document.createElement('div');
+        voiceCard.className = 'voice-card bg-ink rounded-lg border border-gold/10 p-4 flex items-center justify-between';
+        voiceCard.setAttribute('data-voice-id', voice.id);
+        
+        // 格式化文件大小
+        const fileSizeKB = (voice.file_size / 1024).toFixed(1);
+        const fileSize = fileSizeKB > 1024 
+            ? `${(fileSizeKB / 1024).toFixed(1)} MB` 
+            : `${fileSizeKB} KB`;
+        
+        // 格式化时长
+        const minutes = Math.floor(voice.duration / 60);
+        const seconds = Math.floor(voice.duration % 60);
+        const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        voiceCard.innerHTML = `
+            <div class="flex items-center space-x-4 flex-1">
+                <div class="relative w-12 h-12">
+                    <button class="play-btn absolute inset-0 rounded-full bg-ink-light flex items-center justify-center"
+                            data-voice-id="${voice.id}">
+                        <i class="fa fa-play text-gold"></i>
+                        <!-- 波动动效元素 -->
+                        <span class="play-animation absolute inset-0 rounded-full bg-gold/30"></span>
+                    </button>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gold-light">${voice.name}</h4>
+                    <div class="flex items-center text-xs text-silver/60 mt-1">
+                        <span class="mr-3">${voice.category_name}</span>
+                    </div>
+                    ${voice.description ? `<p class="text-sm text-silver/70 mt-2">${voice.description}</p>` : ''}
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="select-voice-btn metal-btn px-3 py-1 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors" 
+                        data-voice-id="${voice.id}" 
+                        data-voice-name="${voice.name}" 
+                        data-voice-path="${voice.audio_path}">
+                    <i class="fa fa-check mr-1"></i>选择
+                </button>
+                <button class="favorite-btn favorited text-gold" 
+                        data-voice-id="${voice.id}">
+                    <i class="fa fa-heart"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(voiceCard);
+    });
+    
+    // 为新添加的元素绑定事件
+    setupModalVoiceCardEvents();
+    setupModalPlayButtons();
+}
+
+// 设置弹窗音色卡片事件
+function setupModalVoiceCardEvents() {
+    // 选择音色按钮事件
+    document.querySelectorAll('#voice_library_modal .select-voice-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const voiceId = this.getAttribute('data-voice-id');
+            const voiceName = this.getAttribute('data-voice-name');
+            const voicePath = this.getAttribute('data-voice-path');
+            
+            // 选择该音色
+            selectPresetVoice(voicePath, voiceName);
+            
+            // 关闭弹窗
+            document.getElementById('voice_library_modal').classList.add('hidden');
+        });
+    });
+    
+    // 收藏按钮事件
+    document.querySelectorAll('#voice_library_modal .favorite-btn:not([data-event-bound])').forEach(btn => {
+        btn.setAttribute('data-event-bound', 'true');
+        btn.addEventListener('click', function() {
+            const voiceId = this.getAttribute('data-voice-id');
+            toggleFavorite(voiceId);
+        });
+    });
+}
+
+// 更新弹窗中所有收藏状态UI
+function updateModalFavoriteStatuses() {
+    document.querySelectorAll('#voice_library_modal .favorite-btn').forEach(btn => {
+        const voiceId = btn.getAttribute('data-voice-id');
+        const isFavorite = favoriteVoices.some(v => v.id == voiceId);
+        
+        if (isFavorite) {
+            btn.classList.add('favorited');
+            btn.innerHTML = '<i class="fa fa-heart"></i>';
+        } else {
+            btn.classList.remove('favorited');
+            btn.innerHTML = '<i class="fa fa-heart-o"></i>';
+        }
+    });
+}
+
+// 过滤弹窗音色库
+function filterModalLibraryVoices(searchTerm) {
+    const categoryId = document.getElementById('modal_category_filter').value;
+    
+    let filteredVoices = [];
+    if (categoryId === 'all') {
+        filteredVoices = voicesByCategory['all'] || [];
+    } else {
+        filteredVoices = voicesByCategory[categoryId] || [];
+    }
+    
+    if (searchTerm) {
+        filteredVoices = filteredVoices.filter(voice => 
+            voice.name.toLowerCase().includes(searchTerm) || 
+            voice.description.toLowerCase().includes(searchTerm) ||
+            voice.category_name.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    renderModalLibraryVoices(filteredVoices);
+}
+
+// 过滤弹窗中收藏的音色
+function filterModalFavoriteVoices(searchTerm) {
+    if (!searchTerm) {
+        renderModalFavoriteVoices();
+        return;
+    }
+    
+    const filtered = favoriteVoices.filter(voice => 
+        voice.name.toLowerCase().includes(searchTerm) || 
+        voice.description.toLowerCase().includes(searchTerm) ||
+        voice.category_name.toLowerCase().includes(searchTerm)
+    );
+    
+    const container = document.getElementById('modal_favorite_voices_container');
+    container.innerHTML = '';
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 bg-ink rounded-lg border border-gold/10">
+                <p class="text-silver/60">未找到匹配的收藏音色</p>
+            </div>
+        `;
+        return;
+    }
+    
+    filtered.forEach(voice => {
+        const voiceCard = document.createElement('div');
+        voiceCard.className = 'voice-card bg-ink rounded-lg border border-gold/10 p-4 flex items-center justify-between';
+        voiceCard.setAttribute('data-voice-id', voice.id);
+        
+        // 格式化文件大小
+        const fileSizeKB = (voice.file_size / 1024).toFixed(1);
+        const fileSize = fileSizeKB > 1024 
+            ? `${(fileSizeKB / 1024).toFixed(1)} MB` 
+            : `${fileSizeKB} KB`;
+        
+        // 格式化时长
+        const minutes = Math.floor(voice.duration / 60);
+        const seconds = Math.floor(voice.duration % 60);
+        const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        voiceCard.innerHTML = `
+            <div class="flex items-center space-x-4 flex-1">
+                <div class="w-12 h-12 rounded-full bg-ink-light flex items-center justify-center">
+                    <i class="fa fa-volume-up text-gold"></i>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gold-light">${voice.name}</h4>
+                    <div class="flex items-center text-xs text-silver/60 mt-1">
+                        <span class="mr-3">${voice.category_name}</span>
+                        <span class="mr-3">${duration}</span>
+                        <span>${fileSize}</span>
+                    </div>
+                    ${voice.description ? `<p class="text-sm text-silver/70 mt-2">${voice.description}</p>` : ''}
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="select-voice-btn metal-btn px-3 py-1 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors" 
+                        data-voice-id="${voice.id}" 
+                        data-voice-name="${voice.name}" 
+                        data-voice-path="${voice.audio_path}">
+                    <i class="fa fa-check mr-1"></i>选择
+                </button>
+                <button class="favorite-btn favorited text-gold" 
+                        data-voice-id="${voice.id}">
+                    <i class="fa fa-heart"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(voiceCard);
+    });
+    
+    setupModalVoiceCardEvents();
+}
+
+// 设置弹窗中播放按钮事件
+function setupModalPlayButtons() {
+    // 存储当前正在播放的音频实例
+    let currentAudio = null;
+    let currentPlayButton = null;
+
+    // 为所有播放按钮添加点击事件
+    document.querySelectorAll('#voice_library_modal .play-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const voiceCard = this.closest('.voice-card');
+            const audioPath = voiceCard.querySelector('.select-voice-btn').getAttribute('data-voice-path');
+
+            // 如果点击的是新的播放按钮，先停止当前播放的音频
+            if (currentPlayButton && currentPlayButton !== this) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentPlayButton.classList.remove('playing');
+                currentPlayButton.querySelector('i').className = 'fa fa-play text-gold';
+                
+                // 清除当前播放实例
+                currentAudio = null;
+                currentPlayButton = null;
+            }
+
+            // 检查是否是当前正在播放的按钮
+            if (currentPlayButton === this) {
+                // 暂停播放
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                this.classList.remove('playing');
+                this.querySelector('i').className = 'fa fa-play text-gold';
+                currentAudio = null;
+                currentPlayButton = null;
+            } else {
+                // 开始播放新的音频
+                try {
+                    // 确保先清除可能存在的音频实例
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+                    
+                    // 创建新的音频实例
+                    currentAudio = new Audio(audioPath);
+                    currentPlayButton = this;
+                    
+                    // 播放音频
+                    await currentAudio.play();
+                    
+                    // 更新按钮状态和图标
+                    this.classList.add('playing');
+                    this.querySelector('i').className = 'fa fa-pause text-gold';
+                    
+                    // 音频播放结束时重置状态
+                    currentAudio.onended = () => {
+                        this.classList.remove('playing');
+                        this.querySelector('i').className = 'fa fa-play text-gold';
+                        currentAudio.currentTime = 0;
+                        currentAudio = null;
+                        currentPlayButton = null;
+                    };
+                } catch (error) {
+                    console.error('播放音频失败:', error);
+                    alert('无法播放音频，请稍后再试');
+                    // 出错时重置状态
+                    currentAudio = null;
+                    currentPlayButton = null;
+                    this.classList.remove('playing');
+                    this.querySelector('i').className = 'fa fa-play text-gold';
+                }
+            }
+        });
+    });
+}
+
+// 在generateAudio函数的成功回调中添加
+function saveToHistory(text, audioPath, voiceName) {
+    // 获取当前时间
+    const now = new Date();
+    const formattedDate = now.toLocaleString();
+    
+    // 创建历史记录项
+    const historyItem = {
+        id: Date.now(),
+        text: text,
+        audioPath: audioPath,
+        voiceName: voiceName,
+        date: formattedDate,
+        speed: 1.0 // 默认语速
+    };
+    
+    // 从本地存储获取现有历史记录
+    let history = JSON.parse(localStorage.getItem('audioHistory')) || [];
+    
+    // 添加新记录
+    history.unshift(historyItem); // 添加到开头
+    
+    // 保存回本地存储
+    localStorage.setItem('audioHistory', JSON.stringify(history));
+    
+    // 更新历史记录页面
+    renderHistory();
+}
+
+// 初始化历史记录
+function initHistory() {
+    renderHistory();
+    
+    // 搜索功能
+    document.getElementById('history_search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        filterHistory(searchTerm);
+    });
+    
+    // 清空历史记录
+    document.getElementById('clear_history').addEventListener('click', function() {
+        if (confirm('确定要清空所有历史记录吗？')) {
+            localStorage.removeItem('audioHistory');
+            renderHistory();
+        }
+    });
+}
+
+// 渲染历史记录
+function renderHistory() {
+    const history = JSON.parse(localStorage.getItem('audioHistory')) || [];
+    const container = document.getElementById('history_list');
+    
+    container.innerHTML = '';
+    
+    if (history.length === 0) {
+        container.innerHTML = `
+            <div class="empty-history">
+                <i class="fa fa-history"></i>
+                <p>暂无历史记录</p>
+                <p class="text-sm mt-2">生成的音频将保存在这里</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // 创建网格容器
+    const gridContainer = document.createElement('div');
+    gridContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+    
+    history.forEach(item => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item bg-ink-light rounded-lg border border-gold/10 p-4 hover:border-gold/30 transition-all duration-300';
+        historyItem.setAttribute('data-id', item.id);
+        
+        // 截断过长的文本
+        const truncatedText = item.text.length > 100 ? item.text.substring(0, 100) + '...' : item.text;
+        
+        historyItem.innerHTML = `
+            <div class="history-header mb-3 flex justify-between items-start">
+                <div class="history-info">
+                    <div class="history-title text-gold font-medium text-sm mb-1">${item.voiceName}</div>
+                </div>
+                <div class="history-date text-silver/60 text-xs text-right">
+                    ${item.date}
+                </div>
+            </div>
+            
+            <div class="history-text text-silver text-sm mb-4 h-12 overflow-hidden">
+                ${truncatedText}
+            </div>
+            
+            <div class="history-audio">
+                <div class="custom-audio-player">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <button class="history-play-btn w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold hover:bg-gold/30 transition-colors" data-id="${item.id}">
+                            <i class="fa fa-play text-xs"></i>
+                        </button>
+                        <div class="flex-1 h-1 bg-ink rounded-full overflow-hidden">
+                            <div class="history-progress-bar h-full gold-flow w-0"></div>
+                        </div>
+                        <span class="history-time-display text-xs text-silver/70 min-w-[70px]">00:00</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between mt-3">
+                        <div>
+                            <button class="history-download-btn flex items-center space-x-1 hover:text-gold transition-colors text-xs" data-id="${item.id}" data-speed="1.0">
+                                <i class="fa fa-download"></i>
+                                <span>下载</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="delete-history-btn text-silver/60 hover:text-red-400 transition-colors text-xs" data-id="${item.id}" title="删除">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <audio class="history-audio-element hidden" data-id="${item.id}" src="${item.audioPath}"></audio>
+                </div>
+            </div>
+        `;
+        
+        gridContainer.appendChild(historyItem);
+    });
+    
+    container.appendChild(gridContainer);
+    
+    // 添加事件监听
+    attachHistoryEventListeners();
+    setupHistoryAudioEvents();
+}
+// 添加历史记录事件监听
+function attachHistoryEventListeners() {
+    // 播放按钮
+    document.querySelectorAll('.history-play-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            toggleHistoryAudioPlayback(id);
+        });
+    });
+    
+    // 语速控制
+    document.querySelectorAll('.history-speed-control').forEach(control => {
+        control.addEventListener('input', function() {
+            const id = this.getAttribute('data-id');
+            const speed = parseFloat(this.value);
+            document.querySelector(`.history-speed-value[data-id="${id}"]`).textContent = `${speed}x`;
+            
+            // 更新音频元素的播放速度
+            const audio = document.querySelector(`.history-audio-element[data-id="${id}"]`);
+            if (audio) {
+                audio.playbackRate = speed;
+            }
+            
+            // 更新本地存储中的速度
+            updateHistoryItemSpeed(id, speed);
+        });
+    });
+    
+    // 下载按钮
+    document.querySelectorAll('.history-download-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const speed = parseFloat(this.getAttribute('data-speed'));
+            downloadHistoryAudio(id, speed);
+        });
+    });
+    
+    // 删除按钮
+    document.querySelectorAll('.delete-history-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            deleteHistoryItem(id);
+        });
+    });
+    
+    // 进度条点击
+    document.querySelectorAll('.history-item .history-progress-bar').forEach(bar => {
+        bar.parentElement.addEventListener('click', function(e) {
+            const id = this.closest('.history-item').getAttribute('data-id');
+            const rect = this.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            seekHistoryAudio(id, pos);
+        });
+    });
+}
+
+// 更新历史记录项的语速
+function updateHistoryItemSpeed(id, speed) {
+    let history = JSON.parse(localStorage.getItem('audioHistory')) || [];
+    const index = history.findIndex(item => item.id == id);
+    
+    if (index !== -1) {
+        history[index].speed = speed;
+        localStorage.setItem('audioHistory', JSON.stringify(history));
+        
+        // 更新下载按钮的data-speed属性
+        document.querySelector(`.history-download-btn[data-id="${id}"]`).setAttribute('data-speed', speed);
+    }
+}
+// 切换历史记录音频的播放/暂停状态
+function toggleHistoryAudioPlayback(id) {
+    const audioElement = document.querySelector(`.history-audio-element[data-id="${id}"]`);
+    const playBtn = document.querySelector(`.history-play-btn[data-id="${id}"]`);
+
+    
+    if (!audioElement || !playBtn) return;
+    
+    // 暂停其他正在播放的音频
+    pauseAllOtherAudios(id);
+    
+    if (audioElement.paused) {
+        audioElement.play()
+            .then(() => {
+                playBtn.innerHTML = '<i class="fa fa-pause"></i>';
+                // 初始化波形
+
+                // 开始更新进度
+                updateHistoryAudioProgress(id);
+            })
+            .catch(error => {
+                console.error('播放失败:', error);
+                alert('音频播放失败，请稍后再试');
+            });
+    } else {
+        audioElement.pause();
+        playBtn.innerHTML = '<i class="fa fa-play"></i>';
+    }
+}
+
+// 暂停所有其他正在播放的音频
+function pauseAllOtherAudios(currentId) {
+    document.querySelectorAll('.history-audio-element').forEach(audio => {
+        if (audio.getAttribute('data-id') !== currentId && !audio.paused) {
+            audio.pause();
+            const playBtn = document.querySelector(`.history-play-btn[data-id="${audio.getAttribute('data-id')}"]`);
+            if (playBtn) {
+                playBtn.innerHTML = '<i class="fa fa-play"></i>';
+            }
+        }
+    });
+}
+
+// 更新历史记录音频的进度条和时间显示
+function updateHistoryAudioProgress(id) {
+    const audioElement = document.querySelector(`.history-audio-element[data-id="${id}"]`);
+    const progressBar = document.querySelector(`.history-item[data-id="${id}"] .history-progress-bar`);
+    const timeDisplay = document.querySelector(`.history-item[data-id="${id}"] .history-time-display`);
+    
+    if (!audioElement || !progressBar || !timeDisplay) return;
+    
+    // 如果音频已暂停，停止更新
+    if (audioElement.paused) return;
+    
+    // 计算进度百分比
+    const percent = (audioElement.currentTime / audioElement.duration) * 100;
+    progressBar.style.width = `${percent}%`;
+    
+    // 更新时间显示
+    timeDisplay.textContent = `${formatTime(audioElement.currentTime)} / ${formatTime(audioElement.duration)}`;
+    
+    // 继续更新
+    requestAnimationFrame(() => updateHistoryAudioProgress(id));
+}
+
+// 格式化时间为 MM:SS 格式（复用现有函数或单独实现）
+function formatTime(seconds) {
+    if (isNaN(seconds)) return "00:00";
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// 音频跳转到指定位置
+function seekHistoryAudio(id, position) {
+    const audioElement = document.querySelector(`.history-audio-element[data-id="${id}"]`);
+    if (!audioElement || isNaN(audioElement.duration)) return;
+    
+    // 计算目标时间
+    const targetTime = position * audioElement.duration;
+    audioElement.currentTime = targetTime;
+    
+    // 更新进度显示
+    updateHistoryAudioProgress(id);
+}
+
+// 下载历史记录中的音频
+function downloadHistoryAudio(id, speed) {
+    const audioElement = document.querySelector(`.history-audio-element[data-id="${id}"]`);
+    if (!audioElement || !audioElement.src) {
+        alert('没有可下载的音频文件');
+        return;
+    }
+    
+    // 构建包含语速参数的下载链接
+    const url = new URL(audioElement.src);
+    url.searchParams.set('speed', speed);
+    
+    const a = document.createElement('a');
+    a.href = url.toString();
+    
+    // 获取历史记录项以构建文件名
+    const history = JSON.parse(localStorage.getItem('audioHistory')) || [];
+    const item = history.find(item => item.id == id);
+    
+    if (item) {
+        // 使用文本前几个字符作为文件名一部分
+        const textPreview = item.text.substring(0, 10).replace(/\s+/g, '_');
+        a.download = `history_${textPreview}_${speed}x.mp3`;
+    } else {
+        a.download = `history_audio_${id}_${speed}x.mp3`;
+    }
+    
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 100);
+}
+
+// 删除历史记录项
+function deleteHistoryItem(id) {
+    // 停止可能正在播放的音频
+    const audioElement = document.querySelector(`.history-audio-element[data-id="${id}"]`);
+    if (audioElement) {
+        audioElement.pause();
+    }
+    
+    // 从本地存储中删除
+    let history = JSON.parse(localStorage.getItem('audioHistory')) || [];
+    history = history.filter(item => item.id != id);
+    localStorage.setItem('audioHistory', JSON.stringify(history));
+    
+    // 重新渲染历史记录
+    renderHistory();
+}
+
+// 过滤历史记录
+function filterHistory(searchTerm) {
+    const historyItems = document.querySelectorAll('.history-item');
+    
+    historyItems.forEach(item => {
+        const text = item.querySelector('.history-text').textContent.toLowerCase();
+        const voiceName = item.querySelector('.history-title').textContent.toLowerCase();
+        const date = item.querySelector('.history-date').textContent.toLowerCase();
+        
+        // 检查是否匹配搜索词
+        const matches = text.includes(searchTerm) || 
+                        voiceName.includes(searchTerm) || 
+                        date.includes(searchTerm);
+        
+        // 显示或隐藏项目
+        item.style.display = matches ? 'block' : 'none';
+    });
+}
+
+// 为历史记录音频添加加载完成事件监听
+function setupHistoryAudioEvents() {
+    document.querySelectorAll('.history-audio-element').forEach(audio => {
+        // 音频元数据加载完成后更新时间显示
+        audio.addEventListener('loadedmetadata', function() {
+            const id = this.getAttribute('data-id');
+            const timeDisplay = document.querySelector(`.history-item[data-id="${id}"] .history-time-display`);
+            if (timeDisplay) {
+                timeDisplay.textContent = `00:00 / ${formatTime(this.duration)}`;
+            }
+        });
+        
+        // 音频播放结束后重置状态
+        audio.addEventListener('ended', function() {
+            const id = this.getAttribute('data-id');
+            const playBtn = document.querySelector(`.history-play-btn[data-id="${id}"]`);
+            const progressBar = document.querySelector(`.history-item[data-id="${id}"] .history-progress-bar`);
+            
+            if (playBtn) {
+                playBtn.innerHTML = '<i class="fa fa-play"></i>';
+            }
+            
+            if (progressBar) {
+                progressBar.style.width = '0%';
+            }
+        });
+    });
+}
+function generateAudioWaveform(audioElement, containerId) {
+    // 通过 ID 获取 DOM 元素
+    const container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
+    
+    if (!container) {
+        console.error('波形容器未找到:', containerId);
+        return;
+    }
+    
+    // 清空容器
+    container.innerHTML = '';
+    container.className = 'audio-waveform flex items-end justify-center gap-0.5 h-20 w-full';
+    
+    // 检查是否已经为此音频元素创建过分析器
+    if (audioElement._audioContext) {
+        // 如果已经存在，重用现有的音频上下文
+        const { audioContext, analyser, source } = audioElement._audioContext;
+        
+        // 确保音频上下文处于运行状态
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        // 直接使用现有的分析器创建波形
+        createBarsAndAnimate(container, analyser, audioElement);
+        return;
+    }
+    
+    // 创建新的音频上下文和分析器
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    
+    // 配置分析器
+    analyser.fftSize = 64;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    try {
+        // 创建媒体元素源
+        const source = audioContext.createMediaElementSource(audioElement);
+        
+        // 连接音频节点
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        // 保存引用以便重用
+        audioElement._audioContext = {
+            audioContext,
+            analyser,
+            source,
+            dataArray,
+            bufferLength
+        };
+        
+        // 创建波形条并开始动画
+        createBarsAndAnimate(container, analyser, audioElement, dataArray, bufferLength);
+        
+    } catch (error) {
+        console.error('创建音频分析器失败:', error);
+        // 如果连接失败，创建静态波形作为降级方案
+        createFallbackWaveform(container);
+    }
+}
+
+// 提取创建波形条和动画的逻辑到单独函数
+function createBarsAndAnimate(container, analyser, audioElement, dataArray, bufferLength) {
+    // 创建波形条
+    const bars = [];
+    const barCount = bufferLength || 32; // 如果没有bufferLength，使用默认值
+    
+    for (let i = 0; i < barCount; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'bg-gradient-to-t from-gold to-gold/70 rounded-t-full transition-all duration-50 ease-out';
+        bar.style.width = '3px';
+        bar.style.height = '2px';
+        bar.style.minHeight = '2px';
+        container.appendChild(bar);
+        bars.push(bar);
+    }
+    
+    // 如果没有提供dataArray，创建新的
+    if (!dataArray) {
+        dataArray = new Uint8Array(barCount);
+    }
+    
+    // 动画更新波形
+    function updateWaveform() {
+        if (!audioElement || audioElement.paused || !analyser) {
+            requestAnimationFrame(updateWaveform);
+            return;
+        }
+        
+        try {
+            // 获取频率数据
+            analyser.getByteFrequencyData(dataArray);
+            
+            // 更新每个条形的高度
+            bars.forEach((bar, i) => {
+                const height = (dataArray[i] / 255) * 60 + 2; // 2-62px 高度范围
+                bar.style.height = `${height}px`;
+                bar.style.opacity = 0.5 + (dataArray[i] / 255) * 0.5;
+            });
+            
+            requestAnimationFrame(updateWaveform);
+        } catch (error) {
+            console.error('更新波形失败:', error);
+        }
+    }
+    
+    // 音频播放时启动波形动画
+    const playHandler = () => {
+        if (audioElement._audioContext && audioElement._audioContext.audioContext.state === 'suspended') {
+            audioElement._audioContext.audioContext.resume();
+        }
+        updateWaveform();
+    };
+    
+    const pauseHandler = () => {
+        bars.forEach(bar => {
+            bar.style.height = '2px';
+            bar.style.opacity = '0.3';
+        });
+    };
+    
+    // 移除旧的事件监听器（如果存在）
+    audioElement.removeEventListener('play', playHandler);
+    audioElement.removeEventListener('pause', pauseHandler);
+    
+    // 添加新的事件监听器
+    audioElement.addEventListener('play', playHandler);
+    audioElement.addEventListener('pause', pauseHandler);
+    audioElement.addEventListener('ended', pauseHandler);
+    
+    // 初始状态
+    pauseHandler();
+}
+
+// 降级方案：创建静态波形
+function createFallbackWaveform(container) {
+    container.innerHTML = '';
+    for (let i = 0; i < 32; i++) {
+        const bar = document.createElement('div');
+        const randomHeight = Math.random() * 40 + 5;
+        bar.className = 'bg-gradient-to-t from-gold/50 to-gold/30 rounded-t-full';
+        bar.style.width = '3px';
+        bar.style.height = `${randomHeight}px`;
+        bar.style.opacity = '0.6';
+        container.appendChild(bar);
+    }
+}
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错金流 | 声纹铸刻</title>
+    <!-- 引入外部资源 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 替换原有的Font Awesome链接 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- 配置Tailwind自定义颜色 - 错金银色调 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'gold': '#D4AF37',      // 金色
+                        'gold-light': '#F8EFD4', // 浅金
+                        'silver': '#C0C0C0',    // 银色
+                        'silver-light': '#E8E8E8', // 浅银
+                        'ink': '#232323',       // 墨黑（深邃底色）
+                        'ink-light': '#3A3A3A', // 浅墨
+                        'bronze': '#8D6E63',    // 青铜色
+                        'bronze-dark': '#5D4037', // 深青铜
+                    },
+                    fontFamily: {
+                        'song': ['"Noto Serif SC"', 'serif'],
+                        'sans': ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'golden': '0 2px 15px rgba(212, 175, 55, 0.15)',
+                        'deep': 'inset 0 0 15px rgba(0, 0, 0, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 - 错金银效果 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .gold-gradient {
+                background: linear-gradient(135deg, #D4AF37 0%, #F8EFD4 50%, #D4AF37 100%);
+            }
+            .silver-gradient {
+                background: linear-gradient(135deg, #C0C0C0 0%, #E8E8E8 50%, #C0C0C0 100%);
+            }
+            .ink-gradient {
+                background: linear-gradient(135deg, #232323 0%, #3A3A3A 100%);
+            }
+            .gold-border {
+                border-image: linear-gradient(to right, #D4AF37, #F8EFD4) 1;
+            }
+            .engraved {
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+            }
+            .relief {
+                text-shadow: 0 -1px 1px rgba(255, 255, 255, 0.1);
+            }
+            .bg-pattern {
+                background-image: 
+                    radial-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+                    radial-gradient(rgba(192, 192, 192, 0.02) 1px, transparent 1px);
+                background-size: 50px 50px;
+                background-position: 0 0, 25px 25px;
+            }
+        }
+    </style>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="font-sans text-silver-light min-h-screen bg-pattern scroll-pattern">
+    <div class="flex min-h-screen">
+        <!-- 左侧导航 -->
+        <aside class="sidebar w-64 bg-ink h-screen sticky top-0 flex flex-col">
+            <div class="p-6 border-b border-gold/20">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-lg ink-gradient border border-gold/30 flex items-center justify-center gold-inlay">
+                        <i class="fa fa-magic text-gold"></i>
+                    </div>
+                    <h1 class="text-xl font-song font-semibold text-gold-light engraved">错金流</h1>
+                </div>
+                <p class="text-sm text-silver/60 mt-2">声纹铸刻 · 匠心之作</p>
+            </div>
+            
+            <nav class="flex-1 py-6">
+                <ul class="space-y-1 px-3">
+                    <li>
+                        <a href="#" class="sidebar-item active flex items-center px-4 py-3 text-lg rounded-lg" data-page="home">
+                            <i class="fa fa-home w-6"></i>
+                            <span class="ml-3">首页</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-item flex items-center px-4 py-3 text-lg rounded-lg" data-page="voice-library">
+                            <i class="fa fa-music w-6"></i>
+                            <span class="ml-3">音色库</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-item flex items-center px-4 py-3 text-lg rounded-lg" data-page="history">
+                            <i class="fa fa-history w-6"></i>
+                            <span class="ml-3">历史记录</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="sidebar-item flex items-center px-4 py-3 text-lg rounded-lg" data-page="settings">
+                            <i class="fa fa-cog w-6"></i>
+                            <span class="ml-3">设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <li>
+                <a href="#" class="sidebar-item flex items-center px-4 py-3 text-lg rounded-lg" data-page="auth">
+                    <i class="fa fa-user-circle w-6"></i>
+                    <span class="ml-3">登录/注册</span>
+                </a>
+            </li>            
+            <!-- 修改左侧导航的用户信息区域 -->
+            <div class="p-4 border-t border-gold/20">
+                <div id="user-info" class="hidden">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-ink-light flex items-center justify-center border border-gold/20">
+                            <i class="fa fa-user text-gold"></i>
+                        </div>
+                        <div>
+                            <p id="user-name" class="text-sm font-medium text-gold-light"></p>
+                            <p id="user-email" class="text-xs text-silver/60"></p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button id="logout-btn" class="metal-btn w-full py-2 bg-ink border border-gold/30 hover:bg-gold/20 text-silver hover:text-gold rounded-lg text-sm transition-colors">
+                            <i class="fa fa-sign-out mr-1"></i>退出登录
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="guest-info">
+                    <div class="flex items-center space-x-3 hidden">
+                        <div class="w-10 h-10 rounded-full bg-ink-light flex items-center justify-center border border-gold/20">
+                            <i class="fa fa-user text-silver"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-silver">访客</p>
+                            <p class="text-xs text-silver/60">请登录使用完整功能</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="flex-1">
+            <!-- 首页内容 -->
+            <div id="home-page" class="page-content container mx-auto px-4 py-8 max-w-6xl">
+                <!-- 页面标题 - 错金铭文风格 -->
+                <div class="text-center mb-12 relative">
+                    <h1 class="text-[clamp(1.8rem,5vw,2.8rem)] font-song font-bold text-gold-light mb-3 engraved relative">声纹铸刻</h1>
+                    <p class="text-silver max-w-lg mx-auto relative">取声之质，融金之美，铸刻于音</p>
+                    <!-- 装饰线条 -->
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+
+                <!-- 主要内容区 -->
+                <div class="space-y-8">
+                    <!-- 音频生成面板 - 仿青铜器质感 -->
+                    <section class="bg-ink-light rounded-xl border border-gold/10 shadow-deep p-6 md:p-8 transition-all duration-500 hover:border-gold/30 relative overflow-hidden bronze-pattern">
+                        <!-- 背景纹饰 -->
+                        <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+                            <div class="w-full h-full bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23d4af37\" fill-opacity=\"1\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+                        </div>
+                        
+                        <!-- 主要输入区域 -->
+                        <div class="relative">                 
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- 音色参考音频 - 仿金属容器 -->
+                                <div class="space-y-3">
+                                    <label class="block text-gold font-medium relief flex items-center justify-center">
+                                        <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs">壹</div>
+                                        音色之范
+                                    </label>
+                                    
+                                    <!-- 上传区域（核心显示容器） -->
+                                    <div class="audio-upload border-2 border-dashed border-gold/30 rounded-xl p-4 hover:border-gold/60 transition-all duration-300 bg-ink/50 gold-inlay min-h-[220px]" id="prompt_audio_container">
+                                        <!-- 未上传状态 -->
+                                        <div id="prompt_audio_upload_state" class="text-center">
+                                            <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center rounded-full bg-ink-light/50">
+                                                <i class="fa fa-volume-up text-2xl text-gold/70"></i>
+                                            </div>
+                                            <p class="text-sm text-silver mb-2">拖放音频文件于此，或</p>
+                                            <label class="metal-btn inline-block px-4 py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors cursor-pointer">
+                                                <i class="fa fa-upload mr-1"></i>选择文件
+                                                <input type="file" id="prompt_audio" accept="audio/*" class="hidden" />
+                                            </label>
+                                            <p class="text-xs text-silver/70 mt-2">可纳 MP3, WAV, AAC 诸般</p>
+                                        </div>
+                                        
+                                        <!-- 上传后状态 (默认隐藏，选择预设后显示) -->
+                                        
+                                        <div id="prompt_audio_preview_state" class="hidden space-y-3">
+                                            <!-- 音频信息 -->
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <i class="fa fa-file-audio-o text-gold mr-2"></i>
+                                                    <span id="prompt_audio_name" class="text-sm truncate max-w-[180px]"></span>
+                                                </div>
+                                                <button id="prompt_audio_remove" class="text-silver/60 hover:text-gold transition-colors">
+                                                    <i class="fa fa-times"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- 播放按钮和波纹容器 -->
+                                            <div class="relative flex justify-center items-center py-6">
+                                                <!-- 播放按钮 -->
+                                                <button id="prompt_audio_play_btn" class="metal-btn w-16 h-16 rounded-full bg-gold/20 hover:bg-gold/30 text-gold flex items-center justify-center z-10 transition-all">
+                                                    <i class="fa fa-play text-xl"></i>
+                                                </button>
+                                                
+                                                <!-- 声音波纹容器 -->
+                                                <div id="audio_wave_container" class="absolute flex items-center justify-center">
+                                                    <div class="audio-wave-circle"></div>
+                                                    <div class="audio-wave-circle"></div>
+                                                    <div class="audio-wave-circle"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 隐藏的音频元素 -->
+                                            <audio id="prompt_audio_player" class="hidden"></audio>
+                                            
+                                            <!-- 音频时长/大小 -->
+                                            <div class="flex justify-between text-xs text-silver/60">
+                                                <span id="prompt_audio_duration">00:00</span>
+                                                <span id="prompt_audio_size">0 KB</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 预设音色选择（带分类功能） -->
+                                    <div class="mt-4">
+                                        <button id="open_voice_library" class="metal-btn w-full py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg text-sm transition-colors flex items-center justify-center">
+                                            <i class="fa fa-music mr-2"></i>选择音色
+                                        </button>
+                                    </div>
+                                 
+                                    <input type="hidden" id="prompt_audio_example" value="" />
+                                </div>
+                                
+                                <!-- 文本输入和生成按钮 -->
+                                <div class="space-y-3">
+                                    <label class="block text-gold font-medium relief flex items-center justify-center">
+                                        <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs ">贰</div>
+                                        铭文之辞
+                                    </label>
+                                    <textarea 
+                                        id="input_text" 
+                                        placeholder="请铸刻目标铭文" 
+                                        class="w-full h-32 p-3 bg-ink border border-gold/30 rounded-lg focus:border-gold focus:outline-none transition-colors resize-none text-silver placeholder-silver/50 min-h-[220px]"
+                                    ></textarea>
+                                    
+                                    
+                                    <button 
+                                        id="gen_button" 
+                                        class="metal-btn w-full py-3 gold-gradient text-ink font-medium rounded-lg hover:opacity-90 transition-all duration-300 shadow-golden flex items-center justify-center mt-2"
+                                    >
+                                        <i class="fa fa-magic mr-2"></i>铸刻声韵
+                                    </button>
+                                </div>
+                                
+                                <!-- 生成结果 -->
+                                <div class="space-y-3">
+                                    <label class="block text-gold font-medium relief flex items-center justify-center">
+                                        <div class="w-6 h-6 rounded-full ink-gradient border border-gold/30 flex items-center justify-center mr-1 gold-inlay text-xs">叁</div>
+                                        成器之音
+                                    </label>
+                                    <div id="output_container" class="border border-gold/30 rounded-lg p-4 min-h-[100px] flex flex-col items-center justify-center bg-ink/50 gold-inlay min-h-[220px]">
+                                            <!-- 音频波形显示 -->
+                                        <div id="output_audio_waveform" class="mb-3 h-12 w-full"></div>
+                             
+                                        <div id="custom_audio_player" class="w-full mt-2 hidden">
+                                            <div class="flex items-center space-x-3 mb-2">
+                                                <button id="custom_play_btn" class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center text-gold hover:bg-gold/30 transition-colors">
+                                                    <i class="fa fa-play"></i>
+                                                </button>
+                                                <div class="flex-1 h-1 bg-ink rounded-full overflow-hidden">
+                                                    <div id="progress_bar" class="h-full gold-flow w-0"></div>
+                                                </div>
+                                                <span id="time_display" class="text-xs text-silver/70">00:00 / 00:00</span>
+                                            </div>
+                                            
+
+                                            
+                                            <div class="flex items-center justify-between text-xs text-silver/60">
+                                                <div>
+                                                    <button id="download_btn" class="flex items-center space-x-1 hover:text-gold transition-colors">
+                                                        <i class="fa fa-download"></i>
+                                                        <span>下载</span>
+                                                    </button>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <label class="text-silver/70">语速:</label>
+                                                    <input type="range" id="speed_control" min="0.1" max="2" step="0.05" value="1.0" class="w-32 accent-gold">
+                                                    <span id="speed_value" class="text-silver/70">1.0x</span>
+                                                </div>
+                                            </div>
+                                            <audio id="output_audio" class="hidden"></audio>
+                                        </div>
+                                    </div>
+                                    <div id="generation_status" class="hidden text-center py-4">
+                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold"></div>
+                                        <p class="text-sm text-silver mt-2">正在铸刻声韵...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 功能设置 -->
+                        <div class="px-6 py-4 border-t border-gold/20" >
+                            <div class="flex items-center cursor-pointer" id="settings_toggle">
+                                <h3 class="text-lg font-song text-gold-light engraved">
+                                    <i class="fa fa-cogs mr-2"></i>技艺调校
+                                </h3>
+                                <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="settings_chevron"></i>
+                            </div>
+                            
+                            <div id="settings_content" class="mt-4 space-y-4  hidden">
+                                <!-- 情绪控制开关 -->
+                                <div class="space-y-2">
+                                    <label class="block text-gold font-medium relief">
+                                        <i class="fa fa-heart mr-1"></i>情绪控制
+                                    </label>
+                                    <label class="inline-flex items-center cursor-pointer" id="emo_control_switch">
+                                        <div class="relative">
+                                            <!-- 开关隐藏的输入框（value=0=默认，1=调整情绪） -->
+                                            <input type="checkbox" id="emo_control_toggle" class="sr-only" value="0">
+                                            <!-- 开关样式 -->
+                                            <div class="w-14 h-7 bg-ink rounded-full border border-silver/30 transition-all hover:border-gold/30"></div>
+                                            <div class="dot absolute left-1 top-1 bg-silver/60 w-5 h-5 rounded-full transition-all hover:bg-gold/60"></div>
+                                        </div>
+                                        <span class="ml-3 text-sm text-silver">调整情绪</span>
+                                    </label>
+                                </div>
+                                
+                                <!-- 情绪向量面板（默认隐藏） -->
+                                <div id="emotion_vector_group" class="hidden space-y-3 p-4 border border-gold/20 rounded-lg bg-ink/30 gold-inlay">
+                                    <h4 class="text-gold font-medium relief">情绪维度调整</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">喜</label>
+                                                <input type="range" id="vec1" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">怒</label>
+                                                <input type="range" id="vec2" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">哀</label>
+                                                <input type="range" id="vec3" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">惧</label>
+                                                <input type="range" id="vec4" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                        </div>
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">厌恶</label>
+                                                <input type="range" id="vec5" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">低落</label>
+                                                <input type="range" id="vec6" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">惊喜</label>
+                                                <input type="range" id="vec7" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-silver mb-1">平静</label>
+                                                <input type="range" id="vec8" min="0" max="1" step="0.05" value="0" class="w-full accent-gold">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 高级生成参数设置 -->
+                        <div class="px-6 py-4 border-t border-gold/20" hidden>
+                            <div class="flex items-center cursor-pointer" id="advanced_settings_toggle">
+                                <h3 class="text-lg font-song text-gold-light engraved">
+                                    <i class="fa fa-sliders mr-2"></i>精工细作
+                                </h3>
+                                <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="advanced_settings_chevron"></i>
+                            </div>
+                            
+                            <div id="advanced_settings_content" class="mt-4 hidden space-y-4">
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <!-- GPT2 采样设置 -->
+                                    <div class="col-span-1 space-y-4">
+                                        <h4 class="text-gold font-medium relief">GPT2 采法</h4>
+                                        <p class="text-xs text-silver/60">参数影响声韵之变与铸刻之速</p>
+                                        
+                                        <div class="space-y-3">
+                                            <div class="flex items-center justify-between">
+                                                <label class="inline-flex items-center text-sm text-silver">
+                                                    <div class="relative">
+                                                        <input type="checkbox" id="do_sample" checked class="sr-only">
+                                                        <div class="w-10 h-6 bg-ink rounded-full border border-gold/30"></div>
+                                                        <div class="dot absolute left-1 top-1 bg-gold w-4 h-4 rounded-full transition transform translate-x-4"></div>
+                                                    </div>
+                                                    <span class="ml-3">do_sample</span>
+                                                </label>
+                                                <div class="flex items-center">
+                                                    <label class="text-sm mr-2 text-silver">temperature</label>
+                                                    <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="0.8" class="w-24 accent-gold">
+                                                    <span id="temperature_value" class="text-sm ml-2 text-silver">0.8</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">top_p</label>
+                                                    <input type="range" id="top_p" min="0.0" max="1.0" step="0.01" value="0.8" class="w-full accent-gold">
+                                                    <span id="top_p_value" class="text-xs text-silver">0.8</span>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">top_k</label>
+                                                    <input type="range" id="top_k" min="0" max="100" step="1" value="30" class="w-full accent-gold">
+                                                    <span id="top_k_value" class="text-xs text-silver">30</span>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">num_beams</label>
+                                                    <input type="range" id="num_beams" min="1" max="10" step="1" value="3" class="w-full accent-gold">
+                                                    <span id="num_beams_value" class="text-xs text-silver">3</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">repetition_penalty</label>
+                                                    <input type="number" id="repetition_penalty" value="10.0" min="0.1" max="20.0" step="0.1" 
+                                                           class="w-full text-sm p-1 bg-ink border border-gold/30 rounded text-silver accent-gold">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs text-silver/60 mb-1">length_penalty</label>
+                                                    <input type="number" id="length_penalty" value="0.0" min="-2.0" max="2.0" step="0.1" 
+                                                           class="w-full text-sm p-1 bg-ink border border-gold/30 rounded text-silver accent-gold">
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-xs text-silver/60 mb-1">max_mel_tokens</label>
+                                                <input type="range" id="max_mel_tokens" min="50" max="2000" step="10" value="1500" class="w-full accent-gold">
+                                                <div class="flex justify-between text-xs text-silver/60">
+                                                    <span>50</span>
+                                                    <span id="max_mel_tokens_value" class="text-silver">1500</span>
+                                                    <span>2000</span>
+                                                </div>
+                                                <p class="text-xs text-silver/50 mt-1">铸刻Token之极数，过小则声韵截断</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 分句设置 -->
+                                    <div class="col-span-1 lg:col-span-2 space-y-4">
+                                        <h4 class="text-gold font-medium relief">分句之法</h4>
+                                        <p class="text-xs text-silver/60">参数影响声韵之质与铸刻之速</p>
+                                        
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-xs text-silver/60 mb-1">分句最大Token数</label>
+                                                <input type="range" id="max_text_tokens_per_segment" min="20" 
+                                                       max="200" 
+                                                       step="2" value="100" class="w-full accent-gold">
+                                                <div class="flex justify-between text-xs text-silver/60">
+                                                    <span>20</span>
+                                                    <span id="max_text_tokens_value" class="text-silver">100</span>
+                                                    <span>200</span>
+                                                </div>
+                                                <p class="text-xs text-silver/50 mt-1">建议80~200之间，值大则句长，值小则句碎；过小过大皆可致声韵不精</p>
+                                            </div>
+                                            
+                                            <!-- 预览分句结果 -->
+                                            <div>
+                                                <div class="flex items-center cursor-pointer" id="segments_toggle">
+                                                    <h5 class="text-gold text-sm font-medium relief">预览分句之果</h5>
+                                                    <i class="fa fa-chevron-down ml-2 text-gold/60 transition-transform" id="segments_chevron"></i>
+                                                </div>
+                                                
+                                                <div id="segments_content" class="mt-2 overflow-x-auto">
+                                                    <table class="min-w-full border border-gold/20 rounded-lg bg-ink/30">
+                                                        <thead>
+                                                            <tr class="bg-gold/10">
+                                                                <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">序</th>
+                                                                <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">分句之文</th>
+                                                                <th class="py-2 px-3 text-left text-xs text-gold border-b border-gold/20">Token数</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="segments_table_body" class="text-silver text-sm">
+                                                            <tr>
+                                                                <td colspan="3" class="py-4 px-3 text-center text-sm text-silver/60">输入铭文后显分句之果</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                
+                <!-- 页脚 - 仿款识 -->
+                <footer class="mt-12 text-center text-silver/60 text-sm py-6 border-t border-gold/20 font-song">
+
+                
+                <!-- 点击触发二维码的文字链接 -->
+                <div class="mb-4">
+                    <a href="javascript:;" id="show-qrcode-link" class="text-[rgb(248,239,212)] hover:text-gold transition-colors flex items-center justify-center gap-1">
+                    <i class="fa fa-qrcode"></i>
+                    <span>加入知识星球 & 微信联系我们</span>
+                    </a>
+                    <!-- 星球链接文字 -->
+                    <p class="mt-2">
+                    星球直达：
+                    <a href="https://t.zsxq.com/JcPhI" target="_blank" class="text-[rgb(248,239,212)] hover:text-gold transition-colors underline underline-offset-1">
+                        https://t.zsxq.com/JcPhI
+                    </a>
+                    <span class="ml-2">（获取永久邀请码 + 一对一服务）</span>
+                    </p>
+                </div>
+                </footer>
+                <!-- 二维码弹窗浮层（默认隐藏） -->
+                <div id="qrcode-modal" class="fixed inset-0 bg-ink/90 z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-ink-light rounded-xl border-2 border-gold/50 w-full max-w-md p-6 shadow-golden">
+                    <!-- 弹窗头部（关闭按钮 + 标题） -->
+                    <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-song text-gold-light">扫码互动</h3>
+                    <button id="close-qrcode-modal" class="text-silver hover:text-gold transition-colors">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                    </div>
+
+                    <!-- 二维码容器（双码横向排列，适配弹窗宽度） -->
+                    <div class="flex flex-col md:flex-row justify-center items-center gap-8">
+                    <!-- 第一个二维码：官方知识星球 -->
+                    <div class="qrcode-item flex flex-col items-center gap-2">
+                        <div class="qrcode-frame w-32 h-32 bg-ink rounded-lg border-2 border-gold/50 p-2 shadow-golden flex items-center justify-center">
+                        <img src="../static/知识星球.png" alt="官方知识星球" class="w-full h-full object-contain">
+                        </div>
+                        <p class="text-xs text-gold-light">扫码加入知识星球</p>
+                    </div>
+
+                    <!-- 第二个二维码：微信联系 -->
+                    <div class="qrcode-item flex flex-col items-center gap-2">
+                        <div class="qrcode-frame w-32 h-32 bg-ink rounded-lg border-2 border-gold/50 p-2 shadow-golden flex items-center justify-center">
+                        <img src="../static/微信.png" alt="微信添加我们" class="w-full h-full object-contain">
+                        </div>
+                        <p class="text-xs text-gold-light">扫码微信联系</p>
+                    </div>
+                    </div>
+                </div>
+                </div>
+                
+            </div>
+
+            <!-- 音色库页面 -->
+            <div id="voice-library-page" class="page-content container mx-auto px-4 py-8 max-w-6xl hidden">
+                <!-- 页面标题 -->
+                <div class="text-center mb-10 relative">
+                    <h1 class="text-[clamp(1.5rem,4vw,2.5rem)] font-song font-bold text-gold-light mb-3 engraved relative">音色库</h1>
+                    <p class="text-silver max-w-lg mx-auto relative">精选之声，铸刻之基</p>
+                    <!-- 装饰线条 -->
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+
+                <!-- 音色库标签页 -->
+                <div class="mb-6 border-b border-gold/20">
+                    <div class="flex space-x-8">
+                        <div class="voice-library-tab active py-3 px-1 cursor-pointer" data-tab="all-voices">
+                            <h2 class="text-lg font-song text-gold-light">全部音色</h2>
+                        </div>
+                        <div class="voice-library-tab py-3 px-1 cursor-pointer" data-tab="favorite-voices">
+                            <h2 class="text-lg font-song text-gold-light">收藏音色</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 全部音色内容 -->
+                <div id="all-voices-content" class="space-y-6">
+                    <!-- 搜索和筛选 - 修改为动态类别筛选 -->
+                    <div class="flex flex-wrap gap-4">
+                        <div class="relative">
+                            <input type="text" id="library_voice_search" 
+                                class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none"
+                                placeholder="搜索音色...">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                        </div>
+                        
+                        <!-- 动态类别筛选容器 -->
+                        <div id="dynamic-filters-container" class="flex flex-wrap gap-4">
+                            <!-- 加载状态指示器 -->
+                            <div class="dynamic-filter-loading flex items-center">
+                                <div class="loader-sm mr-2"></div>
+                                <span class="text-silver/60 text-sm">加载分类中...</span>
+                            </div>
+                            <!-- 动态生成的筛选下拉框将在这里显示 -->
+                        </div>
+                        <div id="category-buttons-container" class="flex flex-wrap gap-2 flex-1 min-w-full md:min-w-0">
+                            <button class="category-btn active px-3 py-2 bg-gold/20 text-gold rounded-lg text-sm transition-colors border border-gold/30" 
+                                    data-category="all">
+                                全部
+                            </button>
+                            <!-- 动态生成的类别按钮将在这里显示 -->
+                        </div>
+                    </div>
+
+                    <!-- 加载状态 -->
+                    <div id="library_voices_loading" class="flex items-center justify-center py-10 bg-ink-light rounded-xl border border-gold/10">
+                        <div class="loader mr-2"></div>
+                        <span class="text-silver">加载音色库...</span>
+                    </div>
+                    
+                    <!-- 错误状态 -->
+                    <div id="library_voices_error" class="hidden flex items-center justify-center py-10 bg-ink-light rounded-xl border border-red-500/30">
+                        <i class="fa fa-exclamation-triangle text-red-500 mr-2"></i>
+                        <span class="text-red-400">加载音色库失败，请重试</span>
+                    </div>
+                    
+                    <!-- 分类加载错误提示 -->
+                    <div id="filters_load_error" class="hidden text-sm text-red-400 mt-1">
+                        <i class="fa fa-exclamation-circle mr-1"></i>分类加载失败
+                    </div>
+                    
+                    <!-- 音色列表 - 修改为列表式布局 -->
+                    <div id="library_voices_container" class="hidden space-y-3">
+                        <!-- 动态加载的音色卡片将在这里显示 -->
+                    </div>
+                    
+                    <!-- 重试按钮 -->
+                    <button id="library_retry_voices" class="hidden w-full mt-2 py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg transition-colors">
+                        <i class="fa fa-refresh mr-1"></i>重新加载
+                    </button>
+                </div>
+
+                <!-- 收藏音色内容 -->
+                <div id="favorite-voices-content" class="hidden space-y-6">
+                    <!-- 搜索和筛选 -->
+                    <div class="flex flex-wrap gap-4">
+                        <div class="relative">
+                            <input type="text" id="favorite_voice_search" 
+                                class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none"
+                                placeholder="搜索收藏的音色...">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- 提示信息 -->
+                    <div id="no_favorites_message" class="py-16 text-center">
+                        <div class="w-20 h-20 mx-auto mb-4 flex items-center justify-center rounded-full bg-ink-light/50">
+                            <i class="fa fa-heart-o text-3xl text-silver/50"></i>
+                        </div>
+                        <p class="text-silver/60">您尚未收藏任何音色</p>
+                        <p class="text-sm text-silver/40 mt-2">在音色库中点击心形图标可收藏喜爱的音色</p>
+                    </div>
+                    
+                    <!-- 收藏的音色列表 - 修改为列表式布局 -->
+                    <div id="favorite_voices_container" class="hidden space-y-3">
+                        <!-- 动态加载的收藏音色卡片将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 历史记录页面 -->
+            <div id="history-page" class="page-content container mx-auto px-4 py-8 max-w-6xl hidden">
+                <div class="text-center mb-10">
+                    <h1 class="text-[clamp(1.5rem,4vw,2.5rem)] font-song font-bold text-gold-light mb-3">历史记录</h1>
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-ink-light rounded-xl border border-gold/10 p-6">
+                    <!-- 历史记录过滤器 -->
+                    <div class="history-filters mb-6">
+                        <div class="history-search">
+                            <input type="text" id="history_search" 
+                                class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none w-full"
+                                placeholder="搜索历史记录...">
+                            
+                        </div>
+                        <div class="history-actions">
+                            <button id="clear_history" class="metal-btn px-3 py-1 bg-ink border border-gold/30 hover:bg-gold/20 text-silver hover:text-gold rounded-lg text-sm transition-colors">
+                                <i class="fa fa-trash mr-1"></i>清空记录
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 历史记录列表 -->
+                    <div id="history_list" class="space-y-4">
+                        <!-- 历史记录项将通过JS动态生成 -->
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置页面（占位） -->
+            <div id="settings-page" class="page-content container mx-auto px-4 py-8 max-w-6xl hidden">
+                <div class="text-center mb-10">
+                    <h1 class="text-[clamp(1.5rem,4vw,2.5rem)] font-song font-bold text-gold-light mb-3">设置</h1>
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-ink-light rounded-xl border border-gold/10 p-8 text-center">
+                    <p class="text-silver/60">设置功能开发中</p>
+                </div>
+            </div>
+            <!-- 音色库弹窗 -->
+            
+            <div id="voice_library_modal" class="fixed inset-0 bg-ink/90 z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-ink-light rounded-xl border border-gold/20 w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <!-- 弹窗头部 -->
+                    <div class="p-4 border-b border-gold/20 flex justify-between items-center">
+                        <h2 class="text-xl font-song text-gold-light">选择音色</h2>
+                        <button id="close_voice_library" class="text-silver hover:text-gold transition-colors">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 添加标签页切换 -->
+                    <div class="border-b border-gold/20">
+                        <div class="flex space-x-8">
+                            <div class="modal-voice-tab active py-3 px-1 cursor-pointer" data-tab="modal-all-voices">
+                                <h3 class="text-base font-song text-gold-light">全部音色</h3>
+                            </div>
+                            <div class="modal-voice-tab py-3 px-1 cursor-pointer" data-tab="modal-favorite-voices">
+                                <h3 class="text-base font-song text-gold-light">收藏音色</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 弹窗内容 -->
+                    <div class="flex-1 overflow-y-auto p-4">
+                        <!-- 全部音色内容 -->
+                        <div id="modal_all-voices-content" class="space-y-6">
+                            <!-- 搜索和筛选 -->
+                            <div class="flex flex-wrap gap-4 mb-6">
+                                <div class="relative">
+                                    <input type="text" id="modal_voice_search" 
+                                        class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="搜索音色...">
+                                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                                </div>
+                                
+                                <!-- 动态类别筛选容器 -->
+                                <div id="modal_dynamic-filters-container" class="flex flex-wrap gap-4">
+                                    <!-- 动态生成的筛选下拉框将在这里显示 -->
+                                </div>
+                                <div id="modal_category-buttons-container" class="flex flex-wrap gap-2 flex-1 min-w-full md:min-w-0">
+                                    <button class="modal-category-btn active px-3 py-2 bg-gold/20 text-gold rounded-lg text-sm transition-colors border border-gold/30" 
+                                            data-category="all">
+                                        全部
+                                    </button>
+                                    <!-- 动态生成的类别按钮将在这里显示 -->
+                                </div>
+                            </div>
+
+                            <!-- 加载状态 -->
+                            <div id="modal_voices_loading" class="flex items-center justify-center py-10 bg-ink rounded-xl border border-gold/10">
+                                <div class="loader mr-2"></div>
+                                <span class="text-silver">加载音色库...</span>
+                            </div>
+                            
+                            <!-- 错误状态 -->
+                            <div id="modal_voices_error" class="hidden flex items-center justify-center py-10 bg-ink rounded-xl border border-red-500/30">
+                                <i class="fa fa-exclamation-triangle text-red-500 mr-2"></i>
+                                <span class="text-red-400">加载音色库失败，请重试</span>
+                            </div>
+                            
+                            <!-- 音色列表 -->
+                            <div id="modal_voices_container" class="hidden space-y-3">
+                                <!-- 动态加载的音色卡片将在这里显示 -->
+                            </div>
+                            
+                            <!-- 重试按钮 -->
+                            <button id="modal_retry_voices" class="hidden w-full mt-2 py-2 bg-gold/20 hover:bg-gold/30 text-gold rounded-lg transition-colors">
+                                <i class="fa fa-refresh mr-1"></i>重新加载
+                            </button>
+                        </div>
+                        
+                        <!-- 收藏音色内容 -->
+                        <div id="modal-favorite-voices-content" class="hidden space-y-6">
+                            <!-- 搜索和筛选 -->
+                            <div class="flex flex-wrap gap-4">
+                                <div class="relative">
+                                    <input type="text" id="modal_favorite_voice_search" 
+                                        class="bg-ink border border-gold/30 rounded-lg px-3 py-2 pl-8 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="搜索收藏的音色...">
+                                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-silver/50"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- 提示信息 -->
+                            <div id="modal_no_favorites_message" class="py-16 text-center">
+                                <div class="w-20 h-20 mx-auto mb-4 flex items-center justify-center rounded-full bg-ink-light/50">
+                                    <i class="fa fa-heart-o text-3xl text-silver/50"></i>
+                                </div>
+                                <p class="text-silver/60">您尚未收藏任何音色</p>
+                                <p class="text-sm text-silver/40 mt-2">在音色库中点击心形图标可收藏喜爱的音色</p>
+                            </div>
+                            
+                            <!-- 收藏的音色列表 -->
+                            <div id="modal_favorite_voices_container" class="hidden space-y-3">
+                                <!-- 动态加载的收藏音色卡片将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 认证页面 -->
+            <div id="auth-page" class="page-content container mx-auto px-4 py-8 max-w-6xl hidden">
+                <div class="text-center mb-10 relative">
+                    <h1 class="text-[clamp(1.5rem,4vw,2.5rem)] font-song font-bold text-gold-light mb-3 engraved relative">用户认证</h1>
+                    <p class="text-silver max-w-lg mx-auto relative">错金流 · 声纹铸刻</p>
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <div class="w-16 h-px bg-gradient-to-r from-transparent to-gold/50"></div>
+                        <div class="w-1 h-1 rounded-full bg-gold/70"></div>
+                        <div class="w-16 h-px bg-gradient-to-l from-transparent to-gold/50"></div>
+                    </div>
+                </div>
+
+                <div class="max-w-md mx-auto">
+                    <!-- 登录表单 -->
+                    <div id="login-form" class="bg-ink-light rounded-xl border border-gold/10 p-6 mb-6">
+                        <h2 class="text-xl font-song text-gold-light mb-6 text-center">登录账户</h2>
+                        
+                        <form id="loginForm">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-gold text-sm mb-2">用户名或邮箱</label>
+                                    <input type="text" id="login_identifier" 
+                                        class="w-full bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="请输入用户名或邮箱" required>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-gold text-sm mb-2">密码</label>
+                                    <input type="password" id="login_password" 
+                                        class="w-full bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="请输入密码" required>
+                                </div>
+                                
+                                <button type="submit" 
+                                    class="metal-btn w-full py-3 gold-gradient text-ink font-medium rounded-lg hover:opacity-90 transition-all duration-300 shadow-golden">
+                                    <i class="fa fa-sign-in mr-2"></i>登录
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="text-center mt-4">
+                            <button id="show-register" class="text-gold hover:text-gold-light text-sm transition-colors">
+                                没有账户？立即注册
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 注册表单 -->
+                    <div id="register-form" class="bg-ink-light rounded-xl border border-gold/10 p-6 hidden">
+                        <h2 class="text-xl font-song text-gold-light mb-6 text-center">注册账户</h2>
+                        
+                        <form id="registerForm">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-gold text-sm mb-2">用户名</label>
+                                    <input type="text" id="register_username" 
+                                        class="w-full bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="请输入用户名" required minlength="3">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-gold text-sm mb-2">邮箱</label>
+                                    <input type="email" id="register_email" 
+                                        class="w-full bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="请输入邮箱" required>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-gold text-sm mb-2">密码</label>
+                                    <input type="password" id="register_password" 
+                                        class="w-full bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="请输入密码（至少6位）" required minlength="6">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-gold text-sm mb-2">确认密码</label>
+                                    <input type="password" id="register_confirm_password" 
+                                        class="w-full bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="请再次输入密码" required>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-gold text-sm mb-2">邀请码</label>
+                                    <input type="text" id="register_invite_code" 
+                                        class="w-full bg-ink border border-gold/30 rounded-lg px-3 py-2 text-silver focus:border-gold focus:outline-none"
+                                        placeholder="请输入邀请码" required>
+                                </div>
+                                
+                                <button type="submit" 
+                                    class="metal-btn w-full py-3 gold-gradient text-ink font-medium rounded-lg hover:opacity-90 transition-all duration-300 shadow-golden">
+                                    <i class="fa fa-user-plus mr-2"></i>注册
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="text-center mt-4">
+                            <button id="show-login" class="text-gold hover:text-gold-light text-sm transition-colors">
+                                已有账户？立即登录
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+    // 获取元素
+    const showQrcodeLink = document.getElementById('show-qrcode-link');
+    const qrcodeModal = document.getElementById('qrcode-modal');
+    const closeQrcodeModal = document.getElementById('close-qrcode-modal');
+
+    // 点击文字显示弹窗
+    showQrcodeLink.addEventListener('click', () => {
+        qrcodeModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // 禁止背景滚动
+    });
+
+    // 点击关闭按钮/弹窗外部关闭弹窗
+    closeQrcodeModal.addEventListener('click', () => {
+        qrcodeModal.classList.add('hidden');
+        document.body.style.overflow = ''; // 恢复背景滚动
+    });
+    qrcodeModal.addEventListener('click', (e) => {
+        if (e.target === qrcodeModal) { // 点击弹窗背景关闭
+        qrcodeModal.classList.add('hidden');
+        document.body.style.overflow = '';
+        }
+    });
+    </script>
+</body>
+</html>
