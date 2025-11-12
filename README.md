@@ -1,4 +1,4 @@
-# AI-Promot
+# Cuojinliu-TTS
 
 AI配音神器，一百多种爆款音色，极速声音克隆，可云端直接部署调用。
 
@@ -38,18 +38,15 @@ python Voice_clone_App.py
 
 ```
 
-## 界面预览
-
-<div align="center">
-  <img src="assets/ui.png" alt="AI-Promot 主界面" width="600">
-  <br>
-  <strong>AI-Promot 智能提词器界面</strong>
-</div>
-## 🎥 功能演示
+## DEMO
 
 
 
-https://github.com/user-attachments/assets/c6978792-cb7d-418f-8d5a-1f94e6558ea7
+
+
+https://github.com/user-attachments/assets/0b4479e3-576d-4610-a9a3-348b52170321
+
+
 
 
 
